@@ -26,7 +26,7 @@ class HealthStatusControllerTest {
     private HealthStatusService statusService;
 
     @Test
-    @WithMockUser(authorities = "HEALTH_CENTER")
+    @WithMockUser(roles = "HEALTH_CENTER")
     void confirmPositive_WithPermission_CallsUpdateStatus() throws Exception {
         String json = "{\"anonymousId\": \"user-1\"}";
 
@@ -39,24 +39,23 @@ class HealthStatusControllerTest {
     }
 
     @Test
-    @WithMockUser(authorities = "HEALTH_CENTER")
+    @WithMockUser(roles = "HEALTH_CENTER")
     void resolve_WithPermission_CallsResolveStatus() throws Exception {
         String json = "{\"anonymousId\": \"user-1\"}";
 
-        mockMvc.perform(post("/api/v1/health/resolve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+        mockMvc.perform(post("/api/v1/health/recovery/user-1")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(statusService).resolveStatus("user-1", false);
+        verify(statusService).promoteToRecovered("user-1");
     }
 
     @Test
-    @WithMockUser(authorities = "STUDENT")
+    @WithMockUser(roles = "STUDENT")
     void resolve_WithoutPermission_Returns403() throws Exception {
         String json = "{\"anonymousId\": \"user-1\"}";
 
-        mockMvc.perform(post("/api/v1/health/resolve")
+        mockMvc.perform(post("/api/v1/health/recovery/user-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isForbidden());
@@ -64,11 +63,8 @@ class HealthStatusControllerTest {
 
     @Test
     void resolve_Unauthenticated_Returns403() throws Exception {
-        String json = "{\"anonymousId\": \"user-1\"}";
-
-        mockMvc.perform(post("/api/v1/health/resolve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+        mockMvc.perform(post("/api/v1/health/recovery/user-1")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
     }
 }

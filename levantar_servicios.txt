@@ -1,0 +1,11 @@
+./gradlew :services:circleguard-auth-service:bootRun
+
+./gradlew :services:circleguard-identity-service:bootRun
+
+./gradlew :services:circleguard-gateway-service:bootRun
+
+./gradlew :services:circleguard-form-service:bootRun
+
+./gradlew :services:circleguard-promotion-service:bootRun
+
+./gradlew :services:circleguard-notification-service:bootRun

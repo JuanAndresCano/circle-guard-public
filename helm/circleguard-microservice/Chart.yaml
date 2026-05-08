@@ -1,0 +1,6 @@
+apiVersion: v2
+name: circleguard-microservice
+description: A reusable Helm Chart for all CircleGuard microservices
+type: application
+version: 1.0.0
+appVersion: "1.0"
