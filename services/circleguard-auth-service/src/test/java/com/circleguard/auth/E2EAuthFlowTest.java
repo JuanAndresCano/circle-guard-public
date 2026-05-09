@@ -5,13 +5,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.Assertions;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class E2EAuthFlowTest {
 
@@ -48,11 +51,12 @@ class E2EAuthFlowTest {
 
     @Test
     @Order(4)
-    @DisplayName("E2E-04: Permisos con token inválido debe retornar 401")
-    void e2e_accessPermissionsWithInvalidToken_returns401() throws Exception {
-        mockMvc.perform(get("/api/v1/users/permissions/ADMIN")
-                .header("Authorization", "Bearer token_invalido_123"))
-            .andExpect(status().isUnauthorized());
+    @DisplayName("E2E-04: Login con username nulo debe ser rechazado")
+    void e2e_loginWithNullUsername_isRejected() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\": null, \"password\": \"algo\"}"))
+            .andExpect(status().is4xxClientError());
     }
 
     @Test

@@ -24,9 +24,12 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.wiremock:wiremock-standalone:3.5.2")
 }
-
 tasks.withType<Test> {
-    forkEvery = 0
     maxParallelForks = 1
-    jvmArgs("-Xmx256m")
+    setForkEvery(0)
+    jvmArgs("-Xmx256m", "-Dfile.encoding=UTF-8")
+    testLogging {
+        showStandardStreams = true
+        events("passed", "failed", "skipped")
+    }
 }
