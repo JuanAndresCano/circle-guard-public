@@ -29,22 +29,22 @@ import org.springframework.test.context.DynamicPropertySource;
 public class LoginIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16")
-                    .withDatabaseName("circleguardauth")
-                    .withUsername("test")
-                    .withPassword("test");
+        static PostgreSQLContainer<?> postgres =
+        new PostgreSQLContainer<>("postgres:16")
+                .withDatabaseName("circleguardauth")
+                .withUsername("postgres")
+                .withPassword("postgres");
 
-    @DynamicPropertySource
-    static void registerProps(DynamicPropertyRegistry registry) {
+        @DynamicPropertySource
+        static void registerProps(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+
         registry.add("spring.flyway.url", postgres::getJdbcUrl);
         registry.add("spring.flyway.user", postgres::getUsername);
         registry.add("spring.flyway.password", postgres::getPassword);
-    }
-
+        }
     @Autowired
     private MockMvc mockMvc;
 

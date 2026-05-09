@@ -7,7 +7,6 @@ pipeline {
         SERVICES = "circleguard-auth-service circleguard-identity-service circleguard-gateway-service circleguard-form-service circleguard-promotion-service circleguard-notification-service"
         TESTCONTAINERS_RYUK_DISABLED = "true"
         DOCKER_HOST = "unix:///var/run/docker.sock"
-        TESTCONTAINERS_HOST_OVERRIDE = "172.17.0.1"
     }
 
     stages {
@@ -46,15 +45,6 @@ pipeline {
                     junit '**/build/test-results/test/TEST-*.xml'
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Pipeline DEV completado. Version ${APP_VERSION} desplegada en namespace dev."
-        }
-        failure {
-            echo "Pipeline DEV fallo. Revisar logs de Gradle, Docker o Helm."
         }
     }
 }
