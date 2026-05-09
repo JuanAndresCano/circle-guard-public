@@ -18,9 +18,8 @@ pipeline {
         }
         stage('Unit Tests') {
             steps {
-                // Solo clases con @ExtendWith(MockitoExtension.class) — no necesitan BD
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.service.*"'
-                sh './gradlew :services:circleguard-identity-service:test --no-daemon --tests "com.circleguard.identity.service.*"'
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon'
+                sh './gradlew :services:circleguard-identity-service:test --no-daemon'
             }
             post {
                 always { junit '**/build/test-results/test/TEST-*.xml' }
