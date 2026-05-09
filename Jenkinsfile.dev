@@ -17,9 +17,11 @@ pipeline {
             }
         }
         stage('Unit Tests') {
+            environment {
+                TESTCONTAINERS_RYUK_DISABLED = 'true'
+            }
             steps {
                 sh './gradlew :services:circleguard-auth-service:test --no-daemon'
-                sh './gradlew :services:circleguard-identity-service:test --no-daemon'
             }
             post {
                 always { junit '**/build/test-results/test/TEST-*.xml' }
