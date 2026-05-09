@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+    environment {
+        APP_VERSION      = "1.0.\${BUILD_NUMBER}"
+        GRADLE_USER_HOME = "/home/jenkins/.gradle"
+        SERVICES         = "circleguard-auth-service circleguard-identity-service circleguard-gateway-service circleguard-form-service circleguard-promotion-service circleguard-notification-service"
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Build') {
+            steps { sh './gradlew build -x test --no-daemon' }
+        }
+        stage('Unit & Integration Tests') {
+            steps {
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon'
+                sh './gradlew :services:circleguard-identity-service:test --no-daemon'
+            }
+            post {
+                always { junit '**/build/test-results/test/TEST-*.xml' }
+            }
+        }
+        stage('Docker Build & Tag') {
+            steps {
+                sh '''
+                    for SERVICE in $SERVICES; do
+                        docker build -t circleguard/$SERVICE:stage-$APP_VERSION ./services/$SERVICE
+                    done
+                '''
+            }
+        }
+        stage('Deploy STAGE (Helm)') {
+            steps {
+                sh '''
+                    kubectl create namespace stage --dry-run=client -o yaml | kubectl apply -f -
+                    for SERVICE in $SERVICES; do
+                        helm upgrade --install $SERVICE ./helm/circleguard-microservice \
+                            --namespace stage \
+                            --set image.repository=circleguard/$SERVICE \
+                            --set image.tag=stage-$APP_VERSION \
+                            --set env.SPRING_PROFILES_ACTIVE=stage \
+                            --wait --timeout=120s
+                    done
+                '''
+            }
+        }
+        stage('Smoke Test en Stage') {
+            steps {
+                sh 'sleep 20'
+                sh 'kubectl get pods -n stage'
+            }
+        }
+        stage('E2E contra Stage') {
+            steps {
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.E2EAuthFlowTest"'
+            }
+            post {
+                always { junit '**/build/test-results/test/TEST-*.xml' }
+            }
+        }
+        stage('Performance Tests en Stage') {
+            steps {
+                sh 'pip install locust --quiet'
+                sh 'locust -f locustfile.py --headless -u 40 -r 10 --run-time 90s --html locust-report-stage.html --host http://localhost:8180'
+            }
+            post {
+                always { archiveArtifacts artifacts: 'locust-report-stage.html', allowEmptyArchive: true }
+            }
+        }
+    }
+    post {
+        success { echo "Pipeline STAGE completado. Version $APP_VERSION validada en stage." }
+        failure { echo "Pipeline STAGE fallo. El despliegue a master esta bloqueado." }
+    }
+}
