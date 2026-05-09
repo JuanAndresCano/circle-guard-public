@@ -1,4 +1,4 @@
-# 🛡️ CircleGuard Monorepo
+﻿# CircleGuard Monorepo
 
 **Absolute Privacy. High-Speed Containment. Secure Campus.**
 
@@ -6,13 +6,13 @@ CircleGuard is a state-of-the-art university contact tracing and fencing system 
 
 ---
 
-## 🌟 Vision & Mission
+## Vision & Mission
 
-Our vision is a university campus where health containment speed outpaces lab confirmation timelines without compromising student privacy. CircleGuard leverages campus-native intelligence—class schedules and WiFi infrastructure—to deliver a human-validated, graph-based protection ecosystem.
+Our vision is a university campus where health containment speed outpaces lab confirmation timelines without compromising student privacy. CircleGuard leverages campus-native intelligenceâ€”class schedules and WiFi infrastructure to deliver a human-validated, graph-based protection ecosystem.
 
 ### Key Differentiators
 - **Privacy-as-Code**: Zero real-name exposure outside a secure Health Center vault.
-- **Recursive Containment**: Status promotion cascades (Suspect → Probable → Confirmed) that trigger in milliseconds.
+- **Recursive Containment**: Status promotion cascades that trigger in milliseconds.
 - **Campus Integration**: Smart check-ins using existing WiFi AP triangulation and Bluetooth Low Energy (BLE).
 
 ---
@@ -25,7 +25,7 @@ Our vision is a university campus where health containment speed outpaces lab co
 | **Privacy Compliance** | 100% Anonymity | Penetration test on graph database (Zero real names) |
 | **Check-in Adoption** | > 70% | Analytics on scheduled class contact validation |
 | **False Positive Rate** | < 15% | Post-fence surveys of actual vs. suspected contact |
-| **System Uptime** | 99.5% | 7:00 AM – 10:00 PM (Academic Peak Hours) |
+| **System Uptime** | 99.5% | 7:00 AM - 10:00 PM (Academic Peak Hours) |
 
 ---
 
@@ -81,6 +81,23 @@ CircleGuard follows a **Microservice Architecture** built on a **Hybrid Data Mod
 - [ ] Off-campus circle detection via P2P Bluetooth.
 - [ ] Global Health Dashboard with hotspot visualization.
 - [ ] Lab API bridge for automated test result ingestion.
+
+---
+
+## 🚀 Taller 2: Pruebas y Lanzamiento (Entregables)
+
+Durante este hito, estabilizamos el sistema para su lanzamiento ejecutando los siguientes pilares de pruebas y automatización:
+
+1. **Pruebas Unitarias e Integración (100% Pass):**
+   - Validamos exitosamente de forma aislada todos los microservicios (`auth`, `identity`, `dashboard`, `gateway`, `form`, `notification`, `file`, `promotion`).
+   - Se corrigieron las políticas de seguridad (RBAC) en el `promotion-service` ajustando las anotaciones asociadas a `@WithMockUser`.
+2. **Pruebas de Carga (Locust):**
+   - Se creó un escenario en Python con `locustfile.py` para inyectar tráfico masivo y validar cuellos de botella (Ej: simulando 1000 usuarios concurrentes contra el sistema).
+3. **Pruebas End-to-End (E2E):**
+   - Validación completa del ciclo de vida del usuario, garantizando la orquestación en cadena de los componentes en conjunto.
+4. **CI/CD y Despliegue en Kubernetes (Helm):**
+   - Se construyó el **Jenkinsfile** para la integración y ejecución continua en pipeline.
+   - Se empaquetó toda la infraestructura en **Helm Charts** para un despliegue declarativo y escalable.
 
 ---
 
@@ -142,10 +159,52 @@ npm run test
 
 We maintain high system integrity via multi-level testing:
 
+### 💡 Optimización de Recursos ("Cómo probar sin morir en el intento")
+La arquitectura de microservicios en Java puede consumir rápidamente toda la memoria de tu entorno local. Para evitar bloqueos (*Broken pipe*, *OOM*, o puertos ocupados indefinidamente), sigue estas reglas de oro:
+
+1. **Limitar Memoria y Desactivar Daemons:**
+   Al lanzar pruebas, ejecuta *siempre* Gradle restringiendo el montón de memoria para la JVM de la tarea, e indica explícitamente que no se monte como proceso "demonio":
+   ```bash
+   ./gradlew test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon
+   ```
+
+2. **Matar Procesos Zombis (Si Windows falla en limpiar directorios):**
+   Si Gradle falla quejándose en un pipeline con un error tipo `Unable to delete directory` o puertos bajo uso sin razón aparente, tienes procesos de Java huérfanos. Límpialos en CMD/PowerShell:
+   ```bash
+   taskkill /F /IM java.exe
+   ```
+
+---
+
+### Command Cheat Sheet
+
+#### Ejecutar Tests (Servicio por Servicio)
+
 | Command | Scope |
 |:---|:---|
-| `./gradlew test` | Full system suite (Unit + Integration) |
-| `./gradlew :services:<name>:test` | Single service testing |
+| `./gradlew test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Full system suite (Unit + Integration) |
+| `./gradlew :services:circleguard-auth-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Auth Service testing |
+| `./gradlew :services:circleguard-identity-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Identity Service testing |
+| `./gradlew :services:circleguard-promotion-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Promotion Service testing |
+| `./gradlew :services:circleguard-notification-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Notification Service testing |
+| `./gradlew :services:circleguard-form-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Form Service testing |
+| `./gradlew :services:circleguard-gateway-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Gateway Service testing |
+| `./gradlew :services:circleguard-dashboard-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Dashboard Service testing |
+| `./gradlew :services:circleguard-file-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | File Service testing |
+
+#### Ejecutar la Aplicación (Servicio por Servicio)
+
+| Command | Scope |
+|:---|:---|
+| `./gradlew bootRun --parallel` | Run all microservices |
+| `./gradlew :services:circleguard-auth-service:bootRun` | Run Auth Service |
+| `./gradlew :services:circleguard-identity-service:bootRun` | Run Identity Service |
+| `./gradlew :services:circleguard-promotion-service:bootRun` | Run Promotion Service |
+| `./gradlew :services:circleguard-notification-service:bootRun` | Run Notification Service |
+| `./gradlew :services:circleguard-form-service:bootRun` | Run Form Service |
+| `./gradlew :services:circleguard-gateway-service:bootRun` | Run Gateway Service |
+| `./gradlew :services:circleguard-dashboard-service:bootRun` | Run Dashboard Service |
+| `./gradlew :services:circleguard-file-service:bootRun` | Run File Service |
 
 **Note**: Integration tests use **Testcontainers** to spawn ephemeral Neo4j and PostgreSQL instances for zero-side-effect validation.
 
