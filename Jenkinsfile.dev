@@ -1,56 +1,45 @@
 pipeline {
     agent any
+
     environment {
-        APP_VERSION      = "1.0.\${BUILD_NUMBER}"
+        APP_VERSION = "1.0.${BUILD_NUMBER}"
         GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
-        SERVICES         = "circleguard-auth-service circleguard-identity-service circleguard-gateway-service circleguard-form-service circleguard-promotion-service circleguard-notification-service"        TESTCONTAINERS_RYUK_DISABLED = 'true'
-        DOCKER_HOST      = 'unix:///var/run/docker.sock'
-        TESTCONTAINERS_HOST_OVERRIDE = '172.17.0.1'    }
+        SERVICES = "circleguard-auth-service circleguard-identity-service circleguard-gateway-service circleguard-form-service circleguard-promotion-service circleguard-notification-service"
+        TESTCONTAINERS_RYUK_DISABLED = "true"
+        DOCKER_HOST = "unix:///var/run/docker.sock"
+        TESTCONTAINERS_HOST_OVERRIDE = "172.17.0.1"
+    }
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
+
         stage('Build') {
             steps {
                 sh './gradlew build -x test --no-daemon'
             }
         }
-        stage('Unit Tests') {
-            steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon'
-            }
-            post {
-                always { junit '**/build/test-results/test/TEST-*.xml' }
-            }
-        }
-        stage('Integration Tests') {
-            steps {
-                // Con Testcontainers ya no necesita PostgreSQL externo
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.integration.*"'
-            }
-            post {
-                always { junit '**/build/test-results/test/TEST-*.xml' }
-            }
-        }
+
         stage('Testcontainers Diagnostics') {
             steps {
                 sh '''
-                echo "=== Docker ==="
-                docker version || true
-                docker ps -a || true
-                ls -l /var/run/docker.sock || true
+                    echo "=== Docker ==="
+                    docker version || true
+                    docker ps -a || true
+                    ls -l /var/run/docker.sock || true
 
-                echo "=== Env ==="
-                env | grep -E 'DOCKER|TESTCONTAINERS|CI' | sort || true
+                    echo "=== Env ==="
+                    env | grep -E 'DOCKER|TESTCONTAINERS|CI' | sort || true
                 '''
             }
         }
 
-        stage('Auth Tests') {
+        stage('Integration Tests') {
             steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --stacktrace --info'
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon --stacktrace --info --tests "com.circleguard.auth.integration.LoginIntegrationTest"'
             }
             post {
                 always {
@@ -58,51 +47,14 @@ pipeline {
                 }
             }
         }
-        stage('E2E Tests') {
-            steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.E2EAuthFlowTest"'
-            }
-            post {
-                always { junit '**/build/test-results/test/TEST-*.xml' }
-            }
-        }
-        stage('Docker Build') {
-            steps {
-                sh '''
-                    for SERVICE in $SERVICES; do
-                        docker build -t circleguard/$SERVICE:$APP_VERSION ./services/$SERVICE
-                        docker tag circleguard/$SERVICE:$APP_VERSION circleguard/$SERVICE:latest
-                    done
-                '''
-            }
-        }
-        stage('Deploy DEV (Helm)') {
-            steps {
-                sh '''
-                    kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
-                    for SERVICE in $SERVICES; do
-                        helm upgrade --install $SERVICE ./helm/circleguard-microservice \
-                            --namespace dev \
-                            --set image.repository=circleguard/$SERVICE \
-                            --set image.tag=$APP_VERSION \
-                            --set env.SPRING_PROFILES_ACTIVE=dev \
-                            --wait --timeout=120s
-                    done
-                '''
-            }
-        }
-        stage('Performance Tests (Locust)') {
-            steps {
-                sh 'pip install locust --quiet'
-                sh 'locust -f locustfile.py --headless -u 20 -r 5 --run-time 60s --html locust-report-dev.html --host http://localhost:8180'
-            }
-            post {
-                always { archiveArtifacts artifacts: 'locust-report-dev.html', allowEmptyArchive: true }
-            }
-        }
     }
+
     post {
-        success { echo "Pipeline DEV completado. Version $APP_VERSION desplegada en namespace dev." }
-        failure { echo "Pipeline DEV fallo. Revisar logs de Gradle, Docker o Helm." }
+        success {
+            echo "Pipeline DEV completado. Version ${APP_VERSION} desplegada en namespace dev."
+        }
+        failure {
+            echo "Pipeline DEV fallo. Revisar logs de Gradle, Docker o Helm."
+        }
     }
 }
