@@ -19,6 +19,8 @@ pipeline {
         stage('Unit Tests') {
             environment {
                 TESTCONTAINERS_RYUK_DISABLED = 'true'
+                DOCKER_HOST = 'unix:///var/run/docker.sock'
+                TESTCONTAINERS_HOST_OVERRIDE = '172.17.0.1'
             }
             steps {
                 sh './gradlew :services:circleguard-auth-service:test --no-daemon'
