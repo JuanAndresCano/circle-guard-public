@@ -1,14 +1,7 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/circleguard_auth
-    username: admin
-    password: password
-    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: none
-  flyway:
-    enabled: false   # Flyway ya corrió al levantar el servicio, no repetir en tests
   ldap:
     urls: ldap://localhost:389
     base: dc=circleguard,dc=edu

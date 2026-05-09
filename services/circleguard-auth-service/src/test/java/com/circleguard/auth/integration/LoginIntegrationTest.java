@@ -15,30 +15,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
+@ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @WireMockTest(httpPort = 8083)
-@Testcontainers                          // <-- nuevo
+@Testcontainers
 public class LoginIntegrationTest {
 
-    @Container                           // <-- nuevo: Postgres efímero
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("circleguard_auth")
-            .withUsername("admin")
-            .withPassword("password");
+    @Container
+    static PostgreSQLContainer<?> postgres =
+            new PostgreSQLContainer<>("postgres:16")
+                    .withDatabaseName("circleguardauth")
+                    .withUsername("test")
+                    .withPassword("test");
 
-    @DynamicPropertySource               // <-- nuevo: sobreescribe las properties dinámicamente
-    static void configureProperties(DynamicPropertyRegistry registry) {
+    @DynamicPropertySource
+    static void registerProps(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.flyway.url", postgres::getJdbcUrl);
+        registry.add("spring.flyway.user", postgres::getUsername);
+        registry.add("spring.flyway.password", postgres::getPassword);
     }
 
     @Autowired
