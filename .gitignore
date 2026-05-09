@@ -1,8 +1,10 @@
 # Gradle
 .gradle/
+.gradle-local-cache/
 build/
 !**/src/**/build/
 **/build/
+**/bin/
 
 # Java
 *.class
@@ -46,3 +48,13 @@ web-build/
 *_data/
 pgdata/
 neo4jdata/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
