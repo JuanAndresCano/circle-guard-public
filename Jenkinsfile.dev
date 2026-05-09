@@ -18,8 +18,9 @@ pipeline {
         }
         stage('Unit Tests') {
             steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.service.JwtTokenServiceTest"'
-                sh './gradlew :services:circleguard-identity-service:test --no-daemon --tests "com.circleguard.identity.service.IdentityVaultServiceTest"'
+                // Solo clases con @ExtendWith(MockitoExtension.class) — no necesitan BD
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.service.*"'
+                sh './gradlew :services:circleguard-identity-service:test --no-daemon --tests "com.circleguard.identity.service.*"'
             }
             post {
                 always { junit '**/build/test-results/test/TEST-*.xml' }
@@ -27,7 +28,8 @@ pipeline {
         }
         stage('Integration Tests') {
             steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.integration.LoginIntegrationTest"'
+                // Con Testcontainers ya no necesita PostgreSQL externo
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon --tests "com.circleguard.auth.integration.*"'
             }
             post {
                 always { junit '**/build/test-results/test/TEST-*.xml' }

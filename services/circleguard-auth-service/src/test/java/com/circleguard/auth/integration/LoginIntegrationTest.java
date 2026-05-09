@@ -16,16 +16,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@WireMockTest(httpPort = 8083) // Puerto donde corre identity-service normalmente
-@TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:postgresql://localhost:5432/circleguard_auth",
-    "spring.datasource.username=admin",
-    "spring.datasource.password=password",
-    "spring.datasource.driver-class-name=org.postgresql.Driver"
-})
+@WireMockTest(httpPort = 8083)
+@Testcontainers                          // <-- nuevo
 public class LoginIntegrationTest {
+
+    @Container                           // <-- nuevo: Postgres efímero
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+            .withDatabaseName("circleguard_auth")
+            .withUsername("admin")
+            .withPassword("password");
+
+    @DynamicPropertySource               // <-- nuevo: sobreescribe las properties dinámicamente
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
     @Autowired
     private MockMvc mockMvc;
