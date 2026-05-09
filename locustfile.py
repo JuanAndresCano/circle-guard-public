@@ -1,28 +1,64 @@
 from locust import HttpUser, task, between
+import json
 
 class CircleGuardStressUser(HttpUser):
-    # Simulamos un usuario que piensa o navega entre 1 y 3 segundos entre cada petición
+    # Auth service corre en 8180
+    host = "http://localhost:8180"
     wait_time = between(1, 3)
 
-    # Nota: Si tu servicio corre en otro puerto al hacer las pruebas, se especifica al ejecutar locust
-
     @task(3)
-    def test_anonymous_enrollment_stress(self):
-        """Simula a miles de usuarios intentando registrarse simultáneamente sin credenciales completas"""
-        # Enviamos un payload básico para ver cómo el servidor rechaza peticiones masivas
-        self.client.post("/api/v1/auth/anonymous-session", json={"username": "load_tester"}, name="Anonymous Enrollment Form")
-
-    @task(1)
-    def test_health_check_stress(self):
-        """Simula tráfico a un endpoint público para evaluar si el servidor general cae"""
-        # Llama a un endpoint de salud/documentación
-        self.client.get("/v3/api-docs", name="Get API Docs (Health Check)")
+    def test_login_invalido(self):
+        """Estresar autenticación completa contra LDAP/PostgreSQL"""
+        payload = {"username": "stress_user", "password": "wrong_password"}
+        with self.client.post(
+            "/api/v1/auth/login",
+            json=payload,
+            name="POST /auth/login (invalid)",
+            catch_response=True
+        ) as response:
+            # 401 es el comportamiento esperado — no lo marques como falla
+            if response.status_code in [401, 403]:
+                response.success()
+            elif response.status_code == 500:
+                response.failure(f"Error interno del servidor: {response.status_code}")
 
     @task(2)
-    def test_failed_login_stress(self):
-        """Simula la autenticación hacia la DB/LDAP para estresar la conexión real a Postgres"""
-        payload = {
-            "username": "stress_admin",
-            "password": "wrong_password"
-        }
-        self.client.post("/api/v1/auth/login", json=payload, name="Full Login Endpoint")
+    def test_visitor_handoff_stress(self):
+        """Estresar el endpoint de autenticación de invitados"""
+        payload = {"visitorId": "stress-visitor-001", "token": "invalid-token"}
+        with self.client.post(
+            "/api/v1/auth/visitor/handoff",
+            json=payload,
+            name="POST /auth/visitor/handoff",
+            catch_response=True
+        ) as response:
+            if response.status_code in [400, 401, 403]:
+                response.success()
+            elif response.status_code == 500:
+                response.failure(f"Error 500 inesperado")
+
+    @task(1)
+    def test_qr_generate_sin_token(self):
+        """Verificar que endpoint protegido rechaza sin JWT"""
+        with self.client.get(
+            "/api/v1/auth/qr/generate",
+            name="GET /auth/qr/generate (no token)",
+            catch_response=True
+        ) as response:
+            if response.status_code in [401, 403]:
+                response.success()
+            elif response.status_code == 500:
+                response.failure("Error 500 inesperado en QR endpoint")
+
+    @task(1)
+    def test_permisos_sin_token(self):
+        """Estresar verificación de permisos sin autenticación"""
+        with self.client.get(
+            "/api/v1/users/permissions/HEALTH_OFFICER",
+            name="GET /users/permissions (no token)",
+            catch_response=True
+        ) as response:
+            if response.status_code in [401, 403]:
+                response.success()
+            elif response.status_code == 500:
+                response.failure("Error 500 inesperado en permissions")

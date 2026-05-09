@@ -1,0 +1,955 @@
+README.md:
+
+# CircleGuard Monorepo
+
+**Absolute Privacy. High-Speed Containment. Secure Campus.**
+
+CircleGuard is a state-of-the-art university contact tracing and fencing system designed to identify interconnected contact groups ("Circles") and apply rapid health fences while preserving individual anonymity.
+
+---
+
+## Vision & Mission
+
+Our vision is a university campus where health containment speed outpaces lab confirmation timelines without compromising student privacy. CircleGuard leverages campus-native intelligenceâ€”class schedules and WiFi infrastructure to deliver a human-validated, graph-based protection ecosystem.
+
+### Key Differentiators
+- **Privacy-as-Code**: Zero real-name exposure outside a secure Health Center vault.
+- **Recursive Containment**: Status promotion cascades that trigger in milliseconds.
+- **Campus Integration**: Smart check-ins using existing WiFi AP triangulation and Bluetooth Low Energy (BLE).
+
+---
+
+## 📊 Success Metrics
+
+| Metric | Target | Measurement |
+|:---|:---|:---|
+| **Containment Speed** | < 60 Seconds | Automated test of promotion engine cascade |
+| **Privacy Compliance** | 100% Anonymity | Penetration test on graph database (Zero real names) |
+| **Check-in Adoption** | > 70% | Analytics on scheduled class contact validation |
+| **False Positive Rate** | < 15% | Post-fence surveys of actual vs. suspected contact |
+| **System Uptime** | 99.5% | 7:00 AM - 10:00 PM (Academic Peak Hours) |
+
+---
+
+## 🏗️ Architecture Overview
+
+CircleGuard follows a **Microservice Architecture** built on a **Hybrid Data Model**.
+
+### Core Engine
+1. **Status Promotion Machine**: Uses **Neo4j** for recursive graph traversals to identify contacts within a 14-day temporal window.
+2. **Anonymization Vault**: A segregated **PostgreSQL** vault handles salted-hash identity mapping, compliant with **FERPA** regulations.
+3. **Event-Driven Core**: **Apache Kafka** manages asynchronous status changes, audit logs, and notification dispatches.
+
+### Services Directory
+- **Auth Service**: Dual-chain LDAP (University) / Local (Guest) auth with Dynamic RBAC.
+- **Identity Service**: Cryptographic vault for anonymizing real identities.
+- **Promotion Service**: The status engine (Recursive Graph Processing).
+- **Notification Service**: Multi-channel dispatcher (Push/Email/SMS).
+- **Form Service**: Dynamic health questionnaire engine.
+- **Gateway Service**: Campus entry validation via signed, time-limited QR tokens.
+- **Dashboard Service**: Geospatial hotspot analytics (Privacy-preserving).
+- **File Service**: Secure certificate and document storage (S3-compatible).
+
+---
+
+## 🛠️ Technical Stack
+
+| Layer | Technology | Rationale |
+|:---|:---|:---|
+| **Backend** | Spring Boot 4 / Java 21 | Enterprise-grade maturity & low-latency Jakarta EE support. |
+| **Graph DB** | Neo4j 5.26 | High-performance recursive traversals unreachable with SQL. |
+| **Relational DB**| PostgreSQL 16 | ACID compliant storage for identity and configuration. |
+| **Message Bus** | Apache Kafka 7.6 | Persistent, audit-trailed event log for status dispatches. |
+| **Caching** | Redis 7.2 | L2 distributed cache for rapid entry-gate status validation. |
+| **Mobile/Web** | Expo (React Native) | Unified codebase across iOS, Android, and Browser. |
+| **Infra** | Kubernetes | Orchestration for high availability and auto-scaling. |
+
+---
+
+## 🗺️ Roadmap
+
+### Phase 1: MVP — The Intelligence Core (Current)
+- [x] Status Promotion Machine (Suspect → Probable → Confirmed).
+- [x] Temporal graph with 14-day TTL edges.
+- [x] Multi-channel fence notifications (Push/Email/SMS).
+- [ ] Health Center de-identification console.
+
+### Phase 2: Growth — Spatial Intelligence
+- [ ] WiFi AP triangulation integration.
+- [ ] Campus entry validation (Gatekeeper) QR integration.
+- [ ] LMS integration for "Remote Attendance" status automation.
+
+### Phase 3: Vision — Full Ecosystem
+- [ ] Off-campus circle detection via P2P Bluetooth.
+- [ ] Global Health Dashboard with hotspot visualization.
+- [ ] Lab API bridge for automated test result ingestion.
+
+---
+
+## 🚀 Taller 2: Pruebas y Lanzamiento (Entregables)
+
+Durante este hito, estabilizamos el sistema para su lanzamiento ejecutando los siguientes pilares de pruebas y automatización:
+
+1. **Pruebas Unitarias e Integración (100% Pass):**
+   - Validamos exitosamente de forma aislada todos los microservicios (`auth`, `identity`, `dashboard`, `gateway`, `form`, `notification`, `file`, `promotion`).
+   - Se corrigieron las políticas de seguridad (RBAC) en el `promotion-service` ajustando las anotaciones asociadas a `@WithMockUser`.
+2. **Pruebas de Carga (Locust):**
+   - Se creó un escenario en Python con `locustfile.py` para inyectar tráfico masivo y validar cuellos de botella (Ej: simulando 1000 usuarios concurrentes contra el sistema).
+3. **Pruebas End-to-End (E2E):**
+   - Validación completa del ciclo de vida del usuario, garantizando la orquestación en cadena de los componentes en conjunto.
+4. **CI/CD y Despliegue en Kubernetes (Helm):**
+   - Se construyó el **Jenkinsfile** para la integración y ejecución continua en pipeline.
+   - Se empaquetó toda la infraestructura en **Helm Charts** para un despliegue declarativo y escalable.
+
+---
+
+## 💻 Local Development
+
+### 1. Infrastructure
+Ensure Docker is installed, then start the middleware stack:
+```bash
+docker-compose -f docker-compose.dev.yml up -d
+```
+*Middleware includes: PostgreSQL, Neo4j, Kafka, Zookeeper, Redis, and OpenLDAP.*
+
+### 2. Build & Run
+CircleGuard uses Gradle for parallel builds across services:
+```bash
+# Start all microservices in parallel
+./gradlew bootRun --parallel
+
+# Start a specific service
+./gradlew :services:<service-name>:bootRun
+```
+
+### 3. API Exploration
+Every service exposes an OpenAPI 3.0 interface. Once running, visit:
+`http://localhost:<service-port>/swagger-ui/index.html`
+
+---
+
+## 📱 Frontend Development
+
+The frontend is built using **Expo (React Native)**, supporting iOS, Android, and Web from a single codebase located in `/mobile`.
+
+### 1. Prerequisites
+Ensure you have Node.js installed and dependencies loaded:
+```bash
+cd mobile
+npm install
+```
+
+### 2. Run the Application
+You can run the app in various modes depending on your target platform:
+
+| Platform | Command | Notes |
+|:---|:---|:---|
+| **Development Menu** | `npm run start` | Opens the Expo Go start-up menu. |
+| **Android** | `npm run android` | Requires Android Studio / Emulator or a connected device. |
+| **iOS** | `npm run ios` | Requires macOS with Xcode / Simulator installed. |
+| **Web Browser** | `npm run web` | Launches the dashboard/app in your default browser. |
+
+### 3. Testing
+To run frontend unit and component tests:
+```bash
+npm run test
+```
+
+---
+
+## 🧪 Testing
+
+We maintain high system integrity via multi-level testing:
+
+### 💡 Optimización de Recursos ("Cómo probar sin morir en el intento")
+La arquitectura de microservicios en Java puede consumir rápidamente toda la memoria de tu entorno local. Para evitar bloqueos (*Broken pipe*, *OOM*, o puertos ocupados indefinidamente), sigue estas reglas de oro:
+
+1. **Limitar Memoria y Desactivar Daemons:**
+   Al lanzar pruebas, ejecuta *siempre* Gradle restringiendo el montón de memoria para la JVM de la tarea, e indica explícitamente que no se monte como proceso "demonio":
+   ```bash
+   ./gradlew test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon
+   ```
+
+2. **Matar Procesos Zombis (Si Windows falla en limpiar directorios):**
+   Si Gradle falla quejándose en un pipeline con un error tipo `Unable to delete directory` o puertos bajo uso sin razón aparente, tienes procesos de Java huérfanos. Límpialos en CMD/PowerShell:
+   ```bash
+   taskkill /F /IM java.exe
+   ```
+
+---
+
+### Command Cheat Sheet
+
+#### Ejecutar Tests (Servicio por Servicio)
+
+| Command | Scope |
+|:---|:---|
+| `./gradlew test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Full system suite (Unit + Integration) |
+| `./gradlew :services:circleguard-auth-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Auth Service testing |
+| `./gradlew :services:circleguard-identity-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Identity Service testing |
+| `./gradlew :services:circleguard-promotion-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Promotion Service testing |
+| `./gradlew :services:circleguard-notification-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Notification Service testing |
+| `./gradlew :services:circleguard-form-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Form Service testing |
+| `./gradlew :services:circleguard-gateway-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Gateway Service testing |
+| `./gradlew :services:circleguard-dashboard-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | Dashboard Service testing |
+| `./gradlew :services:circleguard-file-service:test -D"org.gradle.jvmargs=-Xmx256m" --no-daemon` | File Service testing |
+
+#### Ejecutar la Aplicación (Servicio por Servicio)
+
+| Command | Scope |
+|:---|:---|
+| `./gradlew bootRun --parallel` | Run all microservices |
+| `./gradlew :services:circleguard-auth-service:bootRun` | Run Auth Service |
+| `./gradlew :services:circleguard-identity-service:bootRun` | Run Identity Service |
+| `./gradlew :services:circleguard-promotion-service:bootRun` | Run Promotion Service |
+| `./gradlew :services:circleguard-notification-service:bootRun` | Run Notification Service |
+| `./gradlew :services:circleguard-form-service:bootRun` | Run Form Service |
+| `./gradlew :services:circleguard-gateway-service:bootRun` | Run Gateway Service |
+| `./gradlew :services:circleguard-dashboard-service:bootRun` | Run Dashboard Service |
+| `./gradlew :services:circleguard-file-service:bootRun` | Run File Service |
+
+**Note**: Integration tests use **Testcontainers** to spawn ephemeral Neo4j and PostgreSQL instances for zero-side-effect validation.
+
+---
+
+## 🔐 Privacy & Compliance
+
+- **FERPA Compliance**: Student identities are never stored in the contact graph.
+- **Right to be Forgotten**: Users can trigger complete data purging via the Identity Vault.
+- **Temporal Privacy**: All contact edges are automatically purged after 14 days.
+
+settings.gradle.kts:
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
+
+rootProject.name = "circleguard"
+
+// Shared Libraries (Commented out as folders are missing on disk)
+// include("libs:circleguard-common")
+// include("libs:circleguard-security")
+// include("libs:circleguard-events")
+
+// Microservices
+include("services:circleguard-auth-service")
+include("services:circleguard-identity-service")
+include("services:circleguard-promotion-service")
+include("services:circleguard-notification-service")
+include("services:circleguard-form-service")
+include("services:circleguard-file-service")
+include("services:circleguard-gateway-service")
+include("services:circleguard-dashboard-service")
+
+
+qa_e2e_test.py:
+
+import unittest
+import requests
+import uuid
+import uuid
+import logging
+
+# Cambiar puerto si usaste un Gateway (ej: 8000) o si accedes directo a Auth (8080)
+BASE_URL_AUTH = "http://localhost:8080" 
+BASE_URL_IDENTITY = "http://localhost:8082"  
+
+class CircleGuardE2ETests(unittest.TestCase):
+    
+    @classmethod
+    def setUpClass(cls):
+        logging.basicConfig(level=logging.INFO)
+        cls.logger = logging.getLogger("E2E_Tests")
+        cls.logger.info("Iniciando Pruebas E2E (End-To-End). Se asume que Docker-Compose está levantado.")
+
+    def test_01_health_check_infra(self):
+        """1. E2E: Validar que el servidor responde a nivel web y BD está activa"""
+        try:
+            # Reemplaza '/actuator/health' o '/' por un endpoint público que tengas liberado
+            response = requests.get(f"{BASE_URL_AUTH}/v3/api-docs", timeout=3)
+            # En spring boot, si la app está arriba con swagger, responderá un OK (2xx)
+            self.assertTrue(response.status_code in [200, 401, 404])
+        except requests.exceptions.ConnectionError:
+            self.fail("El servicio de Auth no está levantado en localhost. ¡Inicia tus contenedores/aplicaciones!")
+
+    def test_02_e2e_anonymous_enrollment(self):
+        """2. E2E: Proceso de registro anónimo inicial y validación de campos erróneos"""
+        headers = {"Content-Type": "application/json"}
+        # Enviamos un payload malformado para validar que la capa Web -> Service rechace correctamente
+        payload = {"username": "invitado"} 
+        
+        response = requests.post(f"{BASE_URL_AUTH}/api/v1/auth/anonymous-session", json=payload, headers=headers)
+        
+        # Como es una ruta protegida e inviable, deberíamos recibir 400 Bad Request o 401
+        self.assertTrue(response.status_code in [400, 401, 403, 404])
+
+    def test_03_e2e_internal_service_communication(self):
+        """3. E2E: Validar flujo de tokens y seguridad (Rechazo sin JWT)"""
+        headers = {"Authorization": "Bearer null", "Content-Type": "application/json"}
+        # Simulamos intentar extraer perfiles en Identity sin un token válido
+        response = requests.get(f"{BASE_URL_IDENTITY}/api/v1/profiles/me", headers=headers)
+        
+        # Debe fallar el pipeline completo y denegar el acceso
+        self.assertEqual(response.status_code, 401)
+        
+    def test_04_e2e_full_admin_login_rejection(self):
+        """4. E2E: Un intento de login inválido viaja hasta BD/LDAP y devuelve negación"""
+        payload = {
+            "username": "admin_falso",
+            "password": "wrong_password_123"
+        }
+        res = requests.post(f"{BASE_URL_AUTH}/api/v1/auth/login", json=payload)
+        
+        # Comprobamos la traza completa (Web -> Auth Service -> Identity Proxy -> LDAP/Postgres)
+        self.assertTrue(res.status_code in [401, 403, 404]) 
+
+    def test_05_e2e_database_integrity_uuid(self):
+        """5. E2E: Generación y manejo de UUID en extremos expuestos que no existan"""
+        fake_uuid = str(uuid.uuid4())
+        
+        res = requests.get(f"{BASE_URL_IDENTITY}/api/v1/profiles/search?id={fake_uuid}")
+        
+        # Debe procesarse correctamente pero responder vacío/404 sin hacer crash el sistema (500)
+        self.assertNotEqual(res.status_code, 500, "Error Interno E2E: Falla de base de datos o nulos.")
+        self.assertTrue(res.status_code in [401, 403, 404, 200])
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
+
+locustfile.py:
+
+from locust import HttpUser, task, between
+
+class CircleGuardStressUser(HttpUser):
+    # Simulamos un usuario que piensa o navega entre 1 y 3 segundos entre cada petición
+    wait_time = between(1, 3)
+
+    # Nota: Si tu servicio corre en otro puerto al hacer las pruebas, se especifica al ejecutar locust
+
+    @task(3)
+    def test_anonymous_enrollment_stress(self):
+        """Simula a miles de usuarios intentando registrarse simultáneamente sin credenciales completas"""
+        # Enviamos un payload básico para ver cómo el servidor rechaza peticiones masivas
+        self.client.post("/api/v1/auth/anonymous-session", json={"username": "load_tester"}, name="Anonymous Enrollment Form")
+
+    @task(1)
+    def test_health_check_stress(self):
+        """Simula tráfico a un endpoint público para evaluar si el servidor general cae"""
+        # Llama a un endpoint de salud/documentación
+        self.client.get("/v3/api-docs", name="Get API Docs (Health Check)")
+
+    @task(2)
+    def test_failed_login_stress(self):
+        """Simula la autenticación hacia la DB/LDAP para estresar la conexión real a Postgres"""
+        payload = {
+            "username": "stress_admin",
+            "password": "wrong_password"
+        }
+        self.client.post("/api/v1/auth/login", json=payload, name="Full Login Endpoint")
+
+Jenkinsfile:
+
+pipeline {
+    // Ejecutar en cualquier agente de Jenkins disponible
+    agent any
+
+    environment {
+        // Configuraciones globales del pipeline
+        DOCKER_REGISTRY = 'registry.local:5000' // Ajustar si se usa DockerHub o un registry local
+        APP_VERSION = "1.0.${BUILD_NUMBER}"
+        
+        // ¡Crucial! Evita los crashes de "Broken pipe" de tu máquina Windows en el pipeline
+        GRADLE_USER_HOME = "C:\\gradle_cache"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Obteniendo código fuente...'
+                checkout scm
+            }
+        }
+
+        stage('Build Compile') {
+            steps {
+                echo 'Compilando microservicios omitiendo pruebas...'
+                // Utilizamos 'bat' porque Jenkins correrá sobre tu Windows local
+                bat './gradlew build -x test --no-daemon'
+            }
+        }
+
+        stage('Automated Tests') {
+            steps {
+                echo 'Ejecutando Pruebas Unitarias e Integración (Punto 3.a y 3.b)...'
+                bat './gradlew test --no-daemon'
+            }
+            post {
+                always {
+                    // Recopila los resultados HTML/XML de JUnit para mostrarlos en la interfaz de Jenkins
+                    junit '**/build/test-results/test/TEST-*.xml'
+                }
+            }
+        }
+
+        stage('Docker Packaging') {
+            steps {
+                echo 'Construyendo imágenes Docker de los servicios...'
+                bat 'docker-compose -f docker-compose.dev.yml build'
+                // Si tienes un registry configurado, aquí iría el 'docker push'
+            }
+        }
+
+        stage('Deploy to Kubernetes (Helm)') {
+            steps {
+                echo 'Desplegando infraestructura en Minikube o K8s local usando el chart base (Punto 4)...'
+                // Ejemplo para desplegar los ms principales reutilizando nuestro helm chart genérico
+                bat '''
+                helm upgrade --install auth-service ./helm/circleguard-microservice --set image.repository=circleguard/auth-service --set image.tag=latest --namespace circleguard --create-namespace
+                helm upgrade --install identity-service ./helm/circleguard-microservice --set image.repository=circleguard/identity-service --set image.tag=latest --namespace circleguard
+                '''
+            }
+        }
+
+        stage('E2E & Performance Tests') {
+            steps {
+                echo 'Ejecutando pruebas sintéticas de Carga y E2E (Punto 3.c y 3.d)...'
+                // bat 'locust -f load_tests/locustfile.py --headless -u 100 -r 10 --run-time 1m'
+                echo 'Pendiente: Ejecución de Locust'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "El pipeline se completó y deplegó la versión ${APP_VERSION} correctamente."
+        }
+        failure {
+            echo "Hubo un error en el flujo de CI/CD. Revisar logs de Gradle o Helm."
+        }
+    }
+}
+
+
+init-db.sql:
+
+-- Initialize required microservice databases
+SELECT 'CREATE DATABASE circleguard_auth' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'circleguard_auth')\gexec
+SELECT 'CREATE DATABASE circleguard_identity' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'circleguard_identity')\gexec
+SELECT 'CREATE DATABASE circleguard_promotion' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'circleguard_promotion')\gexec
+SELECT 'CREATE DATABASE circleguard_dashboard' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'circleguard_dashboard')\gexec
+SELECT 'CREATE DATABASE circleguard_form' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'circleguard_form')\gexec
+
+gradlew.bat
+
+
+@if "%DEBUG%" == "" @echo off
+@rem ##########################################################################
+@rem
+@rem  Gradle startup script for Windows
+@rem
+@rem ##########################################################################
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+set DIRNAME=%~dp0
+if "%DIRNAME%" == "" set DIRNAME=.
+set APP_BASE_NAME=%~n0
+set APP_HOME=%DIRNAME%
+
+@rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+set DEFAULT_JVM_OPTS=
+
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version >NUL 2>&1
+if "%ERRORLEVEL%" == "0" goto init
+
+echo.
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+
+if exist "%JAVA_EXE%" goto init
+
+echo.
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
+echo.
+echo Please set the JAVA_HOME variable in your environment to match the
+echo location of your Java installation.
+
+goto fail
+
+:init
+@rem Get command-line arguments, handling Windows variants
+
+if not "%OS%" == "Windows_NT" goto win9xME_args
+
+:win9xME_args
+@rem Slurp the command line arguments.
+set CMD_LINE_ARGS=
+set _SKIP=2
+
+:win9xME_args_slurp
+if "x%~1" == "x" goto execute
+
+set CMD_LINE_ARGS=%*
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
+
+@rem Execute Gradle
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS%
+
+:end
+@rem End local scope for the variables with windows NT shell
+if "%ERRORLEVEL%"=="0" goto mainEnd
+
+:fail
+rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+if  not "" == "%GRADLE_EXIT_CONSOLE%" exit 1
+exit /b 1
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+
+:omega
+
+gradlew:
+
+#!/usr/bin/env sh
+
+##############################################################################
+##
+##  Gradle start up script for UN*X
+##
+##############################################################################
+
+# Attempt to set APP_HOME
+# Resolve links: $0 may be a link
+PRG="$0"
+# Need this for relative symlinks.
+while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '/.*' > /dev/null; then
+        PRG="$link"
+    else
+        PRG=`dirname "$PRG"`"/$link"
+    fi
+done
+SAVED="`pwd`"
+cd "`dirname \"$PRG\"`/" >/dev/null
+APP_HOME="`pwd -P`"
+cd "$SAVED" >/dev/null
+
+APP_NAME="Gradle"
+APP_BASE_NAME=`basename "$0"`
+
+# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+DEFAULT_JVM_OPTS=""
+
+# Use the maximum available, or set MAX_FD != -1 to use that value.
+MAX_FD="maximum"
+
+warn () {
+    echo "$*"
+}
+
+die () {
+    echo
+    echo "$*"
+    echo
+    exit 1
+}
+
+# OS specific support (must be 'true' or 'false').
+cygwin=false
+msys=false
+darwin=false
+nonstop=false
+case "`uname`" in
+  CYGWIN* )
+    cygwin=true
+    ;;
+  Darwin* )
+    darwin=true
+    ;;
+  MINGW* )
+    msys=true
+    ;;
+  NONSTOP* )
+    nonstop=true
+    ;;
+esac
+
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+
+# Determine the Java command to use to start the JVM.
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+        # IBM's JDK on AIX uses strange locations for the executables
+        JAVACMD="$JAVA_HOME/jre/sh/java"
+    else
+        JAVACMD="$JAVA_HOME/bin/java"
+    fi
+    if [ ! -x "$JAVACMD" ] ; then
+        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+    fi
+else
+    JAVACMD="java"
+    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+fi
+
+# Increase the maximum file descriptors if we can.
+if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
+    MAX_FD_LIMIT=`ulimit -H -n`
+    if [ $? -eq 0 ] ; then
+        if [ "$MAX_FD" = "maximum" -o "$MAX_FD" = "max" ] ; then
+            MAX_FD="$MAX_FD_LIMIT"
+        fi
+        ulimit -n $MAX_FD
+        if [ $? -ne 0 ] ; then
+            warn "Could not set maximum file descriptor limit: $MAX_FD"
+        fi
+    else
+        warn "Could not query maximum file descriptor limit: $MAX_FD_LIMIT"
+    fi
+fi
+
+# For Darwin, add options to specify how the application appears in the dock
+if $darwin; then
+    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
+fi
+
+# For Cygwin, switch paths to Windows format before running java
+if $cygwin ; then
+    APP_HOME=`cygpath --path --mixed "$APP_HOME"`
+    CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
+    JAVACMD=`cygpath --unix "$JAVACMD"`
+
+    # We build the pattern for arguments to be converted via cygpath
+    ROOTDIRSRAW=`find -L / -maxdepth 1 -mindepth 1 -type d 2>/dev/null`
+    SEP=""
+    for dir in $ROOTDIRSRAW ; do
+        ROOTDIRS="$ROOTDIRS$SEP$dir"
+        SEP="|"
+    done
+    OURCYGPATTERN="(^($ROOTDIRS))"
+    # Add a user-defined pattern to the cygpath arguments
+    if [ "$GRADLE_CYGPATTERN" != "" ] ; then
+        OURCYGPATTERN="$OURCYGPATTERN|($GRADLE_CYGPATTERN)"
+    fi
+    # Now convert the arguments - kludge to limit ourselves to /bin/sh
+    i=0
+    for arg in "$@" ; do
+        CHECK=`echo "$arg"|egrep -c "$OURCYGPATTERN" -`
+        CHECK2=`echo "$arg"|egrep -c "^-"`                                 ### Determine if an option
+
+        if [ $CHECK -ne 0 ] && [ $CHECK2 -eq 0 ] ; then                    ### Added a condition
+            eval `echo args$i`=`cygpath --path --ignore --mixed "$arg"`
+        else
+            eval `echo args$i`="\"$arg\""
+        fi
+        i=$((i+1))
+    done
+    case $i in
+        (0) set -- ;;
+        (1) set -- "$args0" ;;
+        (2) set -- "$args0" "$args1" ;;
+        (3) set -- "$args0" "$args1" "$args2" ;;
+        (4) set -- "$args0" "$args1" "$args2" "$args3" ;;
+        (5) set -- "$args0" "$args1" "$args2" "$args3" "$args4" ;;
+        (6) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" ;;
+        (7) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" ;;
+        (8) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" ;;
+        (9) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" ;;
+    esac
+fi
+
+# Escape application args
+save () {
+    for i do printf %s\\n "$i" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/' \\\\/" ; done
+    echo " "
+}
+APP_ARGS=$(save "$@")
+
+# Collect all arguments for the java command, following the shell quoting and substitution rules
+if $JAVACMD --add-opens java.base/java.lang=ALL-UNNAMED -version ; then
+    DEFAULT_JVM_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED $DEFAULT_JVM_OPTS"
+fi
+
+eval set -- $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS "\"-Dorg.gradle.appname=$APP_BASE_NAME\"" -classpath "\"$CLASSPATH\"" org.gradle.wrapper.GradleWrapperMain "$APP_ARGS"
+
+# by default we should be in the correct project dir, but when run from Finder on Mac, the cwd is wrong
+if [ "$(uname)" = "Darwin" ] && [ "$HOME" = "$PWD" ]; then
+  cd "$(dirname "$0")"
+fi
+
+exec "$JAVACMD" "$@"
+
+
+docker-compose.dev.yml:
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: circleguard-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: circleguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+
+  neo4j:
+    image: neo4j:5.26
+    container_name: circleguard-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/password
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_connector_bolt_listen__address: :7687
+      NEO4J_dbms_connector_bolt_advertised__address: :7687
+    volumes:
+      - neo4jdata:/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: circleguard-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: circleguard-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  redis:
+    image: redis:7.2
+    container_name: circleguard-redis
+    ports:
+      - "6379:6379"
+
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: circleguard-ldap
+    ports:
+      - "389:389"
+      - "636:636"
+    environment:
+      LDAP_ORGANISATION: "CircleGuard"
+      LDAP_DOMAIN: "circleguard.edu"
+      LDAP_ADMIN_PASSWORD: "admin"
+
+volumes:
+  pgdata:
+  neo4jdata:
+
+
+build.gradel.kts:
+
+plugins {
+    id("org.springframework.boot") version "3.2.4" apply false
+    id("io.spring.dependency-management") version "1.1.4" apply false
+    kotlin("jvm") version "1.9.24" apply false
+    kotlin("plugin.spring") version "1.9.24" apply false
+    kotlin("plugin.jpa") version "1.9.24" apply false
+}
+
+allprojects {
+    group = "com.circleguard"
+    version = "1.0.0-SNAPSHOT"
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    extensions.configure<JavaPluginExtension> {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
+
+    dependencies {
+        "implementation"(platform("org.springframework.boot:spring-boot-dependencies:3.2.4"))
+        "testImplementation"(platform("org.springframework.boot:spring-boot-dependencies:3.2.4"))
+        "compileOnly"("org.projectlombok:lombok")
+        "annotationProcessor"("org.projectlombok:lombok")
+        "testCompileOnly"("org.projectlombok:lombok")
+        "testAnnotationProcessor"("org.projectlombok:lombok")
+        "implementation"("org.jetbrains.kotlin:kotlin-reflect")
+        "testImplementation"("org.springframework.boot:spring-boot-starter-test")
+        "testRuntimeOnly"("com.h2database:h2")
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+            jvmTarget = "21"
+        }
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
+}
+values.yaml:
+
+# Generales del Microservicio
+nameOverride: "microservice-name"
+replicaCount: 1
+
+image:
+  repository: circleguard/servicio # Sobreescribir en Jenkins
+  pullPolicy: IfNotPresent
+  tag: "latest" # Jenkins inyectará el Build ID
+
+service:
+  type: ClusterIP
+  port: 8080 # Puerto interno del contenedor
+
+# Variables de Configuración que Spring Boot leerá
+env:
+  SPRING_PROFILES_ACTIVE: "stage" # dev, stage, master
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/db_name"
+  SPRING_DATASOURCE_USERNAME: "admin"
+  SPRING_DATASOURCE_PASSWORD: "password"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
+  NEO4J_URI: "bolt://neo4j-service:7687"
+  NEO4J_USERNAME: "neo4j"
+  NEO4J_PASSWORD: "password"
+  REDIS_HOST: "redis-service"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+Chart.yaml:
+
+apiVersion: v2
+name: circleguard-microservice
+description: A reusable Helm Chart for all CircleGuard microservices
+type: application
+version: 1.0.0
+appVersion: "1.0"
+
+/templates/service.yaml:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nameOverride }}
+  labels:
+    app: {{ .Values.nameOverride }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.nameOverride }}
+
+/templates/deployment.yaml:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.nameOverride }}
+  labels:
+    app: {{ .Values.nameOverride }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.nameOverride }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nameOverride }}
+    spec:
+      containers:
+        - name: {{ .Values.nameOverride }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.env.SPRING_PROFILES_ACTIVE | quote }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.env.SPRING_DATASOURCE_URL | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.env.SPRING_DATASOURCE_USERNAME | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.env.SPRING_DATASOURCE_PASSWORD | quote }}
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.env.KAFKA_BOOTSTRAP_SERVERS | quote }}
+            - name: NEO4J_URI
+              value: {{ .Values.env.NEO4J_URI | quote }}
+            - name: NEO4J_USERNAME
+              value: {{ .Values.env.NEO4J_USERNAME | quote }}
+            - name: NEO4J_PASSWORD
+              value: {{ .Values.env.NEO4J_PASSWORD | quote }}
+            - name: REDIS_HOST
+              value: {{ .Values.env.REDIS_HOST | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+
+Todo lo de helm está dentro de /helm/circleguard-microservice

@@ -24,3 +24,9 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.wiremock:wiremock-standalone:3.5.2")
 }
+
+tasks.withType<Test> {
+    forkEvery = 0
+    maxParallelForks = 1
+    jvmArgs("-Xmx256m")
+}
