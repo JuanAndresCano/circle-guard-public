@@ -35,3 +35,8 @@ tasks.withType<Test> {
         events("passed", "failed", "skipped")
     }
 }
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("e2e", "integration")
+    }
+}
