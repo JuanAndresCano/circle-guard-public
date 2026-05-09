@@ -25,6 +25,7 @@ dependencies {
     testImplementation("org.wiremock:wiremock-standalone:3.5.2")
     testImplementation("org.testcontainers:postgresql:1.19.7")
     testImplementation("org.testcontainers:junit-jupiter:1.19.7")
+    testImplementation("org.springframework.test:spring-test:6.1.5")
 }
 tasks.withType<Test> {
     maxParallelForks = 1
