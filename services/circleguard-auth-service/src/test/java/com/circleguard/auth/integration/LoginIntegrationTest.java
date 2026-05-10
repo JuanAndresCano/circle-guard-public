@@ -37,7 +37,9 @@ public class LoginIntegrationTest {
                 .withDatabaseName("circleguardauth")
                 .withUsername("postgres")
                 .withPassword("postgres")
-                .waitingFor(Wait.forListeningPort())             
+                .waitingFor(
+                        Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2)
+                )
                 .withStartupTimeout(Duration.ofSeconds(60));
 
         @DynamicPropertySource
