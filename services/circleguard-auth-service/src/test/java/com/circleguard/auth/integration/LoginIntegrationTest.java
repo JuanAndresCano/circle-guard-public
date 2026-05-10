@@ -28,12 +28,14 @@ import org.springframework.test.context.DynamicPropertySource;
 @Testcontainers
 public class LoginIntegrationTest {
 
-    @Container
+        @Container
         static PostgreSQLContainer<?> postgres =
         new PostgreSQLContainer<>("postgres:16")
                 .withDatabaseName("circleguardauth")
                 .withUsername("postgres")
-                .withPassword("postgres");
+                .withPassword("postgres")
+                .waitingFor(Wait.forListeningPort())             
+                .withStartupTimeout(Duration.ofSeconds(60));
 
         @DynamicPropertySource
         static void registerProps(DynamicPropertyRegistry registry) {
@@ -45,11 +47,11 @@ public class LoginIntegrationTest {
         registry.add("spring.flyway.user", postgres::getUsername);
         registry.add("spring.flyway.password", postgres::getPassword);
         }
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Test
-    void test1_validLogin_successfulIntegrationWithIdentityService() throws Exception {
+        @Test
+        void test1_validLogin_successfulIntegrationWithIdentityService() throws Exception {
         // [MOCK] 1. Simulamos el Identity-Service
         stubFor(WireMock.post(urlEqualTo("/api/v1/identities/map"))
                 .willReturn(aResponse()
