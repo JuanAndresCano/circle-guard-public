@@ -35,26 +35,31 @@ tasks.withType<Test> {
         events("passed", "failed", "skipped")
     }
 }
+
+// Unit tests — excluye e2e y clases de integración por paquete
 tasks.named<Test>("test") {
     useJUnitPlatform {
-        excludeTags("e2e", "integration")
+        excludeTags("e2e")
+    }
+    filter {
+        excludeTestsMatching("com.circleguard.auth.integration.*")
     }
     description = "Corre solo unit tests (sin Testcontainers ni BD)"
 }
 
-// Integration tests — Testcontainers + WireMock
+// Integration tests — por paquete, no por tag
 tasks.register<Test>("integrationTest") {
-    useJUnitPlatform {
-        includeTags("integration")
-        // También incluye clases en el paquete integration sin tag explícito
-    }
+    useJUnitPlatform()
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     systemProperty("spring.profiles.active", "test")
+    filter {
+        includeTestsMatching("com.circleguard.auth.integration.*")
+    }
     description = "Corre pruebas de integración con Testcontainers"
 }
 
-// E2E tests — flujos completos
+// E2E tests — por tag (E2EAuthFlowTest tiene @Tag("e2e"))
 tasks.register<Test>("e2eTest") {
     useJUnitPlatform {
         includeTags("e2e")

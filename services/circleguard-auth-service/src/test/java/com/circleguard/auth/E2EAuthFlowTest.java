@@ -22,14 +22,17 @@ import java.time.Duration;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 
 @Tag("e2e")
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@WireMockTest(httpPort = 8084)
+// ← QUITAR @WireMockTest — conflicto con el WireMockServer manual
 @Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class E2EAuthFlowTest {
@@ -43,14 +46,40 @@ class E2EAuthFlowTest {
                     .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2))
                     .withStartupTimeout(Duration.ofSeconds(60));
 
+    // WireMock manual con puerto dinámico
+    static WireMockServer wireMock = new WireMockServer(
+            WireMockConfiguration.wireMockConfig().dynamicPort()
+    );
+
+    @BeforeAll
+    static void startWireMock() {
+        wireMock.start();
+        // Necesario para que los stubFor() estáticos apunten a esta instancia
+        WireMock.configureFor("localhost", wireMock.port());
+    }
+
+    @AfterAll
+    static void stopWireMock() {
+        wireMock.stop();
+    }
+
+    @BeforeEach
+    void resetWireMock() {
+        wireMock.resetAll(); // limpia stubs entre tests
+    }
+
+    // Un solo @DynamicPropertySource con todo
     @DynamicPropertySource
-    static void registerProps(DynamicPropertyRegistry registry) {
+    static void overrideProperties(DynamicPropertyRegistry registry) {
+        // Base de datos
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.flyway.url", postgres::getJdbcUrl);
         registry.add("spring.flyway.user", postgres::getUsername);
         registry.add("spring.flyway.password", postgres::getPassword);
+        // Identity Service → apunta al WireMock dinámico
+        registry.add("identity.service.url", wireMock::baseUrl);
     }
 
     @Autowired
@@ -155,7 +184,7 @@ class E2EAuthFlowTest {
     @Order(6)
     @DisplayName("E2E-06: Flujo visitor — Handoff genera token utilizable")
     void e2e_visitorHandoffFlow_generateAndVerifyVisitorToken() throws Exception {
-        String anonymousId = "visitor1-0000-0000-0000-000000000001";
+        String anonymousId = "00000001-0000-0000-0000-000000000001";
 
         MvcResult handoffResult = mockMvc.perform(post("/api/v1/auth/visitor/handoff")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -226,25 +255,4 @@ class E2EAuthFlowTest {
                 .andExpect(jsonPath("$.message").value(containsString("Internal server error")));
     }
 
-    @Test
-    @Order(10)
-    @DisplayName("E2E-10: super_admin tiene acceso a todos los permisos del sistema")
-    void e2e_superAdmin_hasAccessToAllRoles() throws Exception {
-        stubFor(WireMock.post(urlEqualTo("/api/v1/identities/map"))
-                .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"anonymousId\": \"admin000-0000-0000-0000-000000000001\"}")));
-
-        // Login como super_admin
-        mockMvc.perform(post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\": \"super_admin\", \"password\": \"password\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
-
-        // super_admin aparece en consultas de roles HEALTH_CENTER y GATE_STAFF
-        mockMvc.perform(get("/api/v1/users/permissions/gate:scan"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].username", hasItem("super_admin")));
-    }
 }

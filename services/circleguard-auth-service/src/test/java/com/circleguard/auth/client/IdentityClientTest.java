@@ -15,10 +15,10 @@ class IdentityClientTest {
 
     private IdentityClient identityClient;
 
-    @BeforeEach
-    void setUp() {
-        identityClient = new IdentityClient();
-    }
+        @BeforeEach
+        void setUp() {
+        identityClient = new IdentityClient("http://localhost:8083");
+        }
 
     @Test
     @DisplayName("U23: Respuesta válida retorna UUID correcto")
