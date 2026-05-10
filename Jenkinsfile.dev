@@ -37,6 +37,9 @@ pipeline {
         }
 
         stage('Integration Tests') {
+            environment {
+                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
+            }
             steps {
                 sh './gradlew :services:circleguard-auth-service:test --no-daemon --stacktrace --info --tests "com.circleguard.auth.integration.LoginIntegrationTest"'
             }

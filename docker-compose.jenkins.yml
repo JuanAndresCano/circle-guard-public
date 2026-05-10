@@ -1,5 +1,9 @@
 services:
   jenkins:
+  
+    environment:
+      - TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal
+      - DOCKER_HOST=unix:///var/run/docker.sock
     build:
       context: .
       dockerfile: jenkins/Dockerfile
