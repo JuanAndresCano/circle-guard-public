@@ -29,7 +29,7 @@ dependencies {
 tasks.withType<Test> {
     maxParallelForks = 1
     setForkEvery(0)
-    jvmArgs("-Xmx256m", "-Dfile.encoding=UTF-8")
+    jvmArgs("-Xmx512m", "-Dfile.encoding=UTF-8")
     testLogging {
         showStandardStreams = true
         events("passed", "failed", "skipped")
@@ -39,4 +39,28 @@ tasks.named<Test>("test") {
     useJUnitPlatform {
         excludeTags("e2e", "integration")
     }
+    description = "Corre solo unit tests (sin Testcontainers ni BD)"
+}
+
+// Integration tests — Testcontainers + WireMock
+tasks.register<Test>("integrationTest") {
+    useJUnitPlatform {
+        includeTags("integration")
+        // También incluye clases en el paquete integration sin tag explícito
+    }
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    systemProperty("spring.profiles.active", "test")
+    description = "Corre pruebas de integración con Testcontainers"
+}
+
+// E2E tests — flujos completos
+tasks.register<Test>("e2eTest") {
+    useJUnitPlatform {
+        includeTags("e2e")
+    }
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    systemProperty("spring.profiles.active", "test")
+    description = "Corre pruebas E2E con Testcontainers + WireMock"
 }

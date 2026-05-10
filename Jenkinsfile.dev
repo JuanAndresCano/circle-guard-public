@@ -4,12 +4,12 @@ pipeline {
     environment {
         APP_VERSION = "1.0.${BUILD_NUMBER}"
         GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
-        SERVICES = "circleguard-auth-service circleguard-identity-service circleguard-gateway-service circleguard-form-service circleguard-promotion-service circleguard-notification-service"
         TESTCONTAINERS_RYUK_DISABLED = "true"
         DOCKER_HOST = "unix:///var/run/docker.sock"
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -22,32 +22,112 @@ pipeline {
             }
         }
 
-        stage('Testcontainers Diagnostics') {
+        // ── UNIT TESTS ─────────────────────────────────────────────────
+        // Rápidos, sin Docker ni BD. Corren siempre.
+        stage('Unit Tests') {
             steps {
-                sh '''
-                    echo "=== Docker ==="
-                    docker version || true
-                    docker ps -a || true
-                    ls -l /var/run/docker.sock || true
-
-                    echo "=== Env ==="
-                    env | grep -E 'DOCKER|TESTCONTAINERS|CI' | sort || true
-                '''
-            }
-        }
-
-        stage('Integration Tests') {
-            environment {
-                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
-            }
-            steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --stacktrace --info --tests "com.circleguard.auth.integration.LoginIntegrationTest"'
+                sh './gradlew test --no-daemon'
+                // El build.gradle.kts excluye tags e2e e integration del task "test"
+                // así que solo corren los unit tests aquí
             }
             post {
                 always {
                     junit '**/build/test-results/test/TEST-*.xml'
                 }
             }
+        }
+
+        // ── DIAGNÓSTICO DOCKER ─────────────────────────────────────────
+        stage('Docker Diagnostics') {
+            steps {
+                sh '''
+                    echo "=== Docker version ==="
+                    docker version || true
+                    echo "=== Socket ==="
+                    ls -l /var/run/docker.sock || true
+                    echo "=== Env ==="
+                    env | grep -E 'DOCKER|TESTCONTAINERS|CI' | sort || true
+                '''
+            }
+        }
+
+        // ── INTEGRATION TESTS ──────────────────────────────────────────
+        // Usan Testcontainers (PostgreSQL) + WireMock
+        stage('Integration Tests') {
+            environment {
+                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
+            }
+            steps {
+                sh './gradlew test --no-daemon -Dspring.profiles.active=test -PincludeTags=integration --tests "com.circleguard.auth.integration.*"'
+            }
+            post {
+                always {
+                    junit '**/build/test-results/test/TEST-*.xml'
+                }
+            }
+        }
+
+        // ── E2E TESTS ──────────────────────────────────────────────────
+        // Flujos completos de usuario con Testcontainers + WireMock
+        stage('E2E Tests') {
+            environment {
+                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
+            }
+            steps {
+                sh './gradlew test --no-daemon -Dspring.profiles.active=test --tests "com.circleguard.auth.E2EAuthFlowTest"'
+            }
+            post {
+                always {
+                    junit '**/build/test-results/test/TEST-*.xml'
+                }
+            }
+        }
+
+        // ── PERFORMANCE TESTS ─────────────────────────────────────────
+        // Locust en Docker contra el servicio levantado
+        stage('Performance Tests') {
+            steps {
+                sh '''
+                    docker run --rm \
+                        --network host \
+                        -v $(pwd)/performance:/mnt/locust \
+                        locustio/locust:latest \
+                        -f /mnt/locust/locustfile.py \
+                        --headless \
+                        --users 20 \
+                        --spawn-rate 5 \
+                        --run-time 30s \
+                        --host http://localhost:8180 \
+                        --csv /mnt/locust/results \
+                        --html /mnt/locust/report.html \
+                        || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'performance/report.html,performance/results_*.csv',
+                                     allowEmptyArchive: true
+                }
+            }
+        }
+
+        // ── DEPLOY DEV ────────────────────────────────────────────────
+        stage('Deploy Dev') {
+            steps {
+                sh 'docker compose -f docker-compose.dev.yml up -d --build'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finalizado — build #${BUILD_NUMBER}"
+        }
+        failure {
+            echo "Pipeline FALLIDO en stage: verifique los logs"
+        }
+        success {
+            echo "Pipeline EXITOSO — versión ${APP_VERSION} desplegada"
         }
     }
 }
