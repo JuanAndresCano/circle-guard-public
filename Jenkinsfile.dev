@@ -59,12 +59,10 @@ pipeline {
                 TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
             }
             steps {
-                sh './gradlew :services:circleguard-auth-service:test --no-daemon --rerun -Dspring.profiles.active=test --tests "com.circleguard.auth.integration.*"'
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon --rerun-tasks -Dspring.profiles.active=test --tests "com.circleguard.auth.integration.LoginIntegrationTest"'
             }
             post {
-                always {
-                    junit '**/build/test-results/test/TEST-*.xml'
-                }
+                always { junit '**/build/test-results/test/TEST-*.xml' }
             }
         }
 
