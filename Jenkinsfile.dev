@@ -59,7 +59,7 @@ pipeline {
                 TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
             }
             steps {
-                sh './gradlew test --no-daemon -Dspring.profiles.active=test -PincludeTags=integration --tests "com.circleguard.auth.integration.*"'
+                sh './gradlew :services:circleguard-auth-service:test --no-daemon -Dspring.profiles.active=test --tests "com.circleguard.auth.integration.*"'
             }
             post {
                 always {
@@ -75,7 +75,7 @@ pipeline {
                 TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
             }
             steps {
-                sh './gradlew test --no-daemon -Dspring.profiles.active=test --tests "com.circleguard.auth.E2EAuthFlowTest"'
+                sh './gradlew :services:circleguard-auth-service:test --tests "com.circleguard.auth.E2EAuthFlowTest"'
             }
             post {
                 always {
