@@ -113,6 +113,8 @@ pipeline {
         // ── DEPLOY DEV ────────────────────────────────────────────────
         stage('Deploy Dev') {
             steps {
+                // En el Jenkinsfile, stage de deploy:
+                sh 'docker compose -f docker-compose.dev.yml down --remove-orphans'
                 sh 'docker compose -f docker-compose.dev.yml up -d --build'
             }
         }
