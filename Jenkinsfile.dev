@@ -87,18 +87,15 @@ pipeline {
         stage('Performance Tests') {
             steps {
                 sh '''
-                    docker run --rm \
-                        --network host \
-                        -v $(pwd)/performance:/mnt/locust \
-                        locustio/locust:latest \
-                        -f /mnt/locust/locustfile.py \
+                    pip install locust
+                    locust -f performance/locustfile.py \
                         --headless \
                         --users 20 \
                         --spawn-rate 5 \
                         --run-time 30s \
                         --host http://localhost:8180 \
-                        --csv /mnt/locust/results \
-                        --html /mnt/locust/report.html \
+                        --csv performance/results \
+                        --html performance/report.html \
                         || true
                 '''
             }
