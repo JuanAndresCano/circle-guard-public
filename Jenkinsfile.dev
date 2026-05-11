@@ -82,37 +82,40 @@ pipeline {
             }
         }
 
-        // ── PERFORMANCE TESTS ─────────────────────────────────────────
-        // Locust en Docker contra el servicio levantado
-        stage('Performance Tests') {
-            steps {
-                sh '''
-                    pip install locust
-                    locust -f performance/locustfile.py \
-                        --headless \
-                        --users 20 \
-                        --spawn-rate 5 \
-                        --run-time 30s \
-                        --host http://localhost:8180 \
-                        --csv performance/results \
-                        --html performance/report.html \
-                        || true
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'performance/report.html,performance/results_*.csv',
-                                     allowEmptyArchive: true
-                }
-            }
-        }
-
         // ── DEPLOY DEV ────────────────────────────────────────────────
         stage('Deploy Dev') {
             steps {
                 // En el Jenkinsfile, stage de deploy:
                 sh 'docker compose -f docker-compose.dev.yml down --remove-orphans'
                 sh 'docker compose -f docker-compose.dev.yml up -d --build'
+            }
+        }
+
+        // ── PERFORMANCE TESTS ─────────────────────────────────────────
+        // Locust en Docker contra el servicio levantado
+        stage('Performance Tests') {
+            steps {
+                sh """
+                    docker run --rm \
+                        --network host \
+                        -v "${WORKSPACE}/performance:/mnt/locust" \
+                        locustio/locust:latest \
+                        -f /mnt/locust/locustfile.py \
+                        --headless \
+                        --users 20 \
+                        --spawn-rate 5 \
+                        --run-time 30s \
+                        --host http://localhost:8180 \
+                        --csv /mnt/locust/results \
+                        --html /mnt/locust/report.html \
+                        || true
+                """
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'performance/report.html,performance/results_*.csv',
+                                     allowEmptyArchive: true
+                }
             }
         }
     }
