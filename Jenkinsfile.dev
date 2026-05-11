@@ -6,6 +6,7 @@ pipeline {
         GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
         TESTCONTAINERS_RYUK_DISABLED = "true"
         DOCKER_HOST = "unix:///var/run/docker.sock"
+        CI = "true"
     }
 
     stages {

@@ -4,6 +4,7 @@ pipeline {
         APP_VERSION      = "1.0.\${BUILD_NUMBER}"
         GRADLE_USER_HOME = "/home/jenkins/.gradle"
         SERVICES         = "circleguard-auth-service circleguard-identity-service circleguard-gateway-service circleguard-form-service circleguard-promotion-service circleguard-notification-service"
+        CI               = "true"
     }
     stages {
         stage('Checkout') {

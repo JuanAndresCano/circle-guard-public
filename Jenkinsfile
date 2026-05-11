@@ -9,6 +9,9 @@ pipeline {
         
         // ¡Crucial! Evita los crashes de "Broken pipe" de tu máquina Windows en el pipeline
         GRADLE_USER_HOME = "C:\\gradle_cache"
+        
+        // Desactiva los tests de Testcontainers que requieren Socket Docker
+        CI = 'true'
     }
 
     stages {
