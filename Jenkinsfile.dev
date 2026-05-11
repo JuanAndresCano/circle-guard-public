@@ -86,7 +86,7 @@ pipeline {
         stage('Deploy Dev') {
             steps {
                 // Limpieza forzada por si quedaron contenedores huérfanos de otros builds o pruebas
-                sh 'docker rm -f circleguard-neo4j circleguard-postgres circleguard-redis circleguard-zookeeper circleguard-ldap || true'
+                sh 'docker rm -f circleguard-neo4j circleguard-postgres circleguard-redis circleguard-zookeeper circleguard-ldap circleguard-kafka || true'
                 
                 // En el Jenkinsfile, stage de deploy:
                 sh 'docker compose -f docker-compose.dev.yml down --remove-orphans'
