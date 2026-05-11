@@ -51,6 +51,7 @@ public class LoginIntegrationTest {
         registry.add("spring.flyway.url", postgres::getJdbcUrl);
         registry.add("spring.flyway.user", postgres::getUsername);
         registry.add("spring.flyway.password", postgres::getPassword);
+        registry.add("identity.service.url", () -> "http://localhost:8083");
     }
 
     @Autowired
