@@ -40,9 +40,6 @@ pipeline {
                     def services = [
                         'circleguard-gateway-service',
                         'circleguard-auth-service',
-                        'circleguard-identity-service',
-                        'circleguard-form-service',
-                        'circleguard-notification-service',
                         'circleguard-promotion-service'
                     ]
 
@@ -60,7 +57,7 @@ pipeline {
                         """
                     }
 
-                    echo "✅ All 6 images built successfully"
+                    echo "✅ 3 core images built successfully"
                 }
             }
         }
