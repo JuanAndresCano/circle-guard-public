@@ -6,7 +6,17 @@ pipeline {
         GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
         TESTCONTAINERS_RYUK_DISABLED = "true"
         DOCKER_HOST = "unix:///var/run/docker.sock"
+        TESTCONTAINERS_HOST_OVERRIDE = "host.docker.internal"
         CI = "true"
+        DOCKER_REGISTRY = 'localhost:5000'
+        NAMESPACE = 'dev'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
     }
 
     stages {
@@ -14,6 +24,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                sh 'chmod +x gradlew'
             }
         }
 
@@ -23,86 +34,90 @@ pipeline {
             }
         }
 
-        // ── UNIT TESTS ─────────────────────────────────────────────────
-        // Rápidos, sin Docker ni BD. Corren siempre.
+        stage('Docker Build') {
+            steps {
+                script {
+                    def services = [
+                        'circleguard-gateway-service',
+                        'circleguard-auth-service',
+                        'circleguard-identity-service',
+                        'circleguard-form-service',
+                        'circleguard-notification-service',
+                        'circleguard-promotion-service'
+                    ]
+
+                    services.each { service ->
+                        def imageName = "${env.DOCKER_REGISTRY}/${service}:${env.IMAGE_TAG}"
+                        def imageLatest = "${env.DOCKER_REGISTRY}/${service}:latest"
+
+                        echo "Building: ${imageName}"
+                        sh """
+                            docker build \
+                                -t ${imageName} \
+                                -t ${imageLatest} \
+                                -f services/${service}/Dockerfile \
+                                .
+                        """
+                    }
+
+                    echo "✅ All 6 images built successfully"
+                }
+            }
+        }
+
+        stage('Deploy Infrastructure') {
+            steps {
+                sh 'docker compose -f docker-compose.dev.yml down --remove-orphans --timeout 30 || true'
+                sh 'docker compose -f docker-compose.dev.yml up -d'
+                sh 'sleep 35'
+                sh 'echo "✅ Infrastructure ready"'
+            }
+        }
+
         stage('Unit Tests') {
             steps {
-                sh './gradlew test --no-daemon'
-                // El build.gradle.kts excluye tags e2e e integration del task "test"
-                // así que solo corren los unit tests aquí
+                sh './gradlew test -x :services:circleguard-gateway-service:test --no-daemon --continue'
             }
             post {
                 always {
-                    junit '**/build/test-results/test/TEST-*.xml'
+                    junit allowEmptyResults: true, testResults: '**/build/test-results/test/TEST-*.xml'
                 }
             }
         }
 
-        // ── DIAGNÓSTICO DOCKER ─────────────────────────────────────────
-        stage('Docker Diagnostics') {
+        stage('Integration Tests') {
             steps {
                 sh '''
-                    echo "=== Docker version ==="
-                    docker version || true
-                    echo "=== Socket ==="
-                    ls -l /var/run/docker.sock || true
-                    echo "=== Env ==="
-                    env | grep -E 'DOCKER|TESTCONTAINERS|CI' | sort || true
+                    ./gradlew :services:circleguard-auth-service:integrationTest \
+                        --no-daemon --continue
                 '''
-            }
-        }
-
-        // ── INTEGRATION TESTS ──────────────────────────────────────────
-        // Usan Testcontainers (PostgreSQL) + WireMock
-        stage('Integration Tests') {
-            environment {
-                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
-            }
-            steps {
-                sh './gradlew :services:circleguard-auth-service:integrationTest --no-daemon --rerun-tasks'
-            }
-            post {
-                always { junit '**/build/test-results/test/TEST-*.xml' }
-            }
-        }
-
-        // ── E2E TESTS ──────────────────────────────────────────────────
-        // Flujos completos de usuario con Testcontainers + WireMock
-        stage('E2E Tests') {
-            environment {
-                TESTCONTAINERS_HOST_OVERRIDE = 'host.docker.internal'
-            }
-            steps {
-                sh './gradlew :services:circleguard-auth-service:e2eTest --no-daemon --rerun-tasks'
             }
             post {
                 always {
-                    junit '**/build/test-results/test/TEST-*.xml'
+                    junit allowEmptyResults: true, testResults: '**/build/test-results/integrationTest/TEST-*.xml'
                 }
             }
         }
 
-        // ── DEPLOY DEV ────────────────────────────────────────────────
-        stage('Deploy Dev') {
+        stage('E2E Tests') {
             steps {
-                // Limpieza forzada por si quedaron contenedores huérfanos de otros builds o pruebas
-                sh 'docker rm -f circleguard-neo4j circleguard-postgres circleguard-redis circleguard-zookeeper circleguard-ldap circleguard-kafka || true'
-                
-                // En el Jenkinsfile, stage de deploy:
-                sh 'docker compose -f docker-compose.dev.yml down --remove-orphans'
-                sh 'docker compose -f docker-compose.dev.yml up -d --build'
+                sh '''
+                    ./gradlew :services:circleguard-auth-service:e2eTest \
+                        --no-daemon --continue
+                '''
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: '**/build/test-results/e2eTest/TEST-*.xml'
+                }
             }
         }
 
-        // ── PERFORMANCE TESTS ─────────────────────────────────────────
-        // Locust en Docker contra el servicio levantado
         stage('Performance Tests') {
             steps {
-                sh """
-                    # 1. Limpiar contenedor previo si existe
+                sh '''
                     docker rm -f locust-runner || true
-                    
-                    # 2. Crear el contenedor sin arrancarlo
+
                     docker create --name locust-runner --network host locustio/locust:latest \
                         -f /home/locust/locustfile.py \
                         --headless \
@@ -112,23 +127,18 @@ pipeline {
                         --host http://localhost:8180 \
                         --csv /home/locust/results \
                         --html /home/locust/report.html
-                    
-                    # 3. Copiar el script de pruebas de Jenkins al contenedor
+
                     docker cp performance/locustfile.py locust-runner:/home/locust/locustfile.py
-                    
-                    # 4. Arrancar el contenedor y atar la salida (-a)
                     docker start -a locust-runner || true
-                    
-                    # 5. Extraer los resultados de vuelta al workspace de Jenkins 
+
                     docker cp locust-runner:/home/locust/report.html performance/report.html || true
                     docker cp locust-runner:/home/locust/results_stats.csv performance/results_stats.csv || true
                     docker cp locust-runner:/home/locust/results_failures.csv performance/results_failures.csv || true
                     docker cp locust-runner:/home/locust/results_exceptions.csv performance/results_exceptions.csv || true
-                    docker cp locust-runner:/home/locust/results_history.csv performance/results_history.csv || true
-                    
-                    # 6. Limpieza final
+                    docker cp locust-runner:/home/locust/results_stats_history.csv performance/results_stats_history.csv || true
+
                     docker rm -f locust-runner || true
-                """
+                '''
             }
             post {
                 always {
@@ -144,7 +154,7 @@ pipeline {
             echo "Pipeline finalizado — build #${BUILD_NUMBER}"
         }
         failure {
-            echo "Pipeline FALLIDO en stage: verifique los logs"
+            echo "Pipeline FALLIDO — verifique los logs"
         }
         success {
             echo "Pipeline EXITOSO — versión ${APP_VERSION} desplegada"

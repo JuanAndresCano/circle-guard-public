@@ -47,7 +47,6 @@ tasks.named<Test>("test") {
     description = "Corre solo unit tests (sin Testcontainers ni BD)"
 }
 
-// Integration tests — por paquete, no por tag
 tasks.register<Test>("integrationTest") {
     useJUnitPlatform()
     testClassesDirs = sourceSets["test"].output.classesDirs
@@ -56,10 +55,12 @@ tasks.register<Test>("integrationTest") {
     filter {
         includeTestsMatching("com.circleguard.auth.integration.*")
     }
+    // ← AÑADE ESTAS DOS LÍNEAS
+    reports.junitXml.outputLocation.set(layout.buildDirectory.dir("test-results/integrationTest"))
+    reports.html.outputLocation.set(layout.buildDirectory.dir("reports/tests/integrationTest"))
     description = "Corre pruebas de integración con Testcontainers"
 }
 
-// E2E tests — por tag (E2EAuthFlowTest tiene @Tag("e2e"))
 tasks.register<Test>("e2eTest") {
     useJUnitPlatform {
         includeTags("e2e")
@@ -67,5 +68,8 @@ tasks.register<Test>("e2eTest") {
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     systemProperty("spring.profiles.active", "test")
+    // ← AÑADE ESTAS DOS LÍNEAS
+    reports.junitXml.outputLocation.set(layout.buildDirectory.dir("test-results/e2eTest"))
+    reports.html.outputLocation.set(layout.buildDirectory.dir("reports/tests/e2eTest"))
     description = "Corre pruebas E2E con Testcontainers + WireMock"
 }

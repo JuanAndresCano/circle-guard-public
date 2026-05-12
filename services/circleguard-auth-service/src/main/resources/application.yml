@@ -11,6 +11,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   ldap:
     urls: ldap://localhost:389
     base: dc=circleguard,dc=edu
