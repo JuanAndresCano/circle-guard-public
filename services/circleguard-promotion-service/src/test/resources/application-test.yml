@@ -1,14 +1,12 @@
 spring:
-  flyway:
-    enabled: false
-  sql:
-    init:
-      mode: never
+  datasource:
+    url: jdbc:postgresql://localhost:5432/circleguard
+    username: postgres
+    password: password
+
   jpa:
     hibernate:
-      ddl-auto: none
-  neo4j:
-    uri: bolt://localhost:7687
-    authentication:
-      username: neo4j
-      password: password
+      ddl-auto: create-drop
+
+  flyway:
+    enabled: false

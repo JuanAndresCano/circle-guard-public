@@ -13,12 +13,17 @@ import java.util.UUID;
 public class IdentityClient {
 
     private final RestTemplate restTemplate;
+    private final String identityServiceUrl;
 
-    @Value("${identity.service.url}")
-    private String identityServiceUrl;
+    //@Value("${identity.service.url}")
+    //private String identityServiceUrl;
 
-    public IdentityClient(RestTemplate restTemplate) {
+    public IdentityClient(
+            RestTemplate restTemplate,
+            @Value("${identity.service.url}") String identityServiceUrl
+    ) {
         this.restTemplate = restTemplate;
+        this.identityServiceUrl = identityServiceUrl;
     }
 
     public UUID getAnonymousId(String realIdentity) {
