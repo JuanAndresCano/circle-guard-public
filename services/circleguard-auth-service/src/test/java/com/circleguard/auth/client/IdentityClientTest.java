@@ -6,18 +6,27 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import org.springframework.web.client.RestTemplate;
+
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@WireMockTest(httpPort = 8083)
+@WireMockTest
 class IdentityClientTest {
 
     private IdentityClient identityClient;
 
         @BeforeEach
-        void setUp() {
-        identityClient = new IdentityClient("http://localhost:8083");
+        void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
+
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
+
+        identityClient = new IdentityClient(
+                new RestTemplate(),
+                baseUrl
+        );
         }
 
     @Test

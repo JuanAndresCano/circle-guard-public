@@ -11,11 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.junit.jupiter.api.Disabled;
-
 @SpringBootTest
 @AutoConfigureMockMvc
-@Disabled("Requiere PostgreSQL — pendiente configurar Testcontainers o H2")
 class AttachmentControllerTest {
 
     @Autowired

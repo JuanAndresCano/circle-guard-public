@@ -12,6 +12,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.util.Collection;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import java.security.Key;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +27,7 @@ class JwtTokenServiceTest {
 
     private static final String SECRET = "my-super-secret-dev-key-32-chars-long-12345678";
     private static final long EXPIRATION = 3600000L;
+    private final String testSecret = "my-super-secret-dev-key-32-chars-long-12345678";
 
     private JwtTokenService jwtTokenService;
     private Key verificationKey;
@@ -36,8 +40,6 @@ class JwtTokenServiceTest {
         jwtTokenService = new JwtTokenService(SECRET, EXPIRATION);
         verificationKey = Keys.hmacShaKeyFor(SECRET.getBytes());
     }
-
-    // --- Tests originales (se mantienen) ---
 
     @Test
     @DisplayName("U1: Token generado tiene formato JWT válido (3 partes)")
@@ -174,5 +176,33 @@ class JwtTokenServiceTest {
                 .build()
                 .parseClaimsJws(token)
         );
+    }
+
+    @Test
+    @DisplayName("U10: generates valid JWT containing user roles and permissions")
+    void testGenerateToken_ShouldReturnValidJwt() {
+        UUID anonymousId = UUID.randomUUID();
+        Authentication auth = mock(Authentication.class);
+        
+        Collection<GrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_USER"),
+                new SimpleGrantedAuthority("post:create")
+        );
+        doReturn(authorities).when(auth).getAuthorities();
+
+        String token = jwtTokenService.generateToken(anonymousId, auth);
+
+        assertNotNull(token);
+
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(testSecret.getBytes())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        assertEquals(anonymousId.toString(), claims.getSubject());
+        List<String> permissions = claims.get("permissions", List.class);
+        assertTrue(permissions.contains("ROLE_USER"));
+        assertTrue(permissions.contains("post:create"));
     }
 }
