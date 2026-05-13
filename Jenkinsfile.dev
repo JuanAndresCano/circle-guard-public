@@ -4,15 +4,17 @@ pipeline {
     environment {
         APP_VERSION = "1.0.${BUILD_NUMBER}"
         GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
+
         TESTCONTAINERS_RYUK_DISABLED = "true"
+        TESTCONTAINERS_REUSE_ENABLE = "true"
+
         DOCKER_HOST = "unix:///var/run/docker.sock"
         TESTCONTAINERS_HOST_OVERRIDE = "host.docker.internal"
+
         CI = "true"
         DOCKER_REGISTRY = 'localhost:5000'
         NAMESPACE = 'dev'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        TESTCONTAINERS_REUSE_ENABLE = "true"   
-        TESTCONTAINERS_RYUK_DISABLED = "true" 
     }
 
     options {
