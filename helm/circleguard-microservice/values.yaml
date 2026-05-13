@@ -1,32 +1,33 @@
-# Generales del Microservicio
-nameOverride: "microservice-name"
+nameOverride: "microservice"
+
 replicaCount: 1
 
 image:
-  repository: circleguard/servicio # Sobreescribir en Jenkins
+  repository: circleguard/service
   pullPolicy: IfNotPresent
-  tag: "latest" # Jenkins inyectará el Build ID
+  tag: latest
 
 service:
   type: ClusterIP
-  port: 8080 # Puerto interno del contenedor
+  port: 8080
 
-# Variables de Configuración que Spring Boot leerá
 env:
-  SPRING_PROFILES_ACTIVE: "stage" # dev, stage, master
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/db_name"
-  SPRING_DATASOURCE_USERNAME: "admin"
-  SPRING_DATASOURCE_PASSWORD: "password"
-  KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
-  NEO4J_URI: "bolt://neo4j-service:7687"
-  NEO4J_USERNAME: "neo4j"
-  NEO4J_PASSWORD: "password"
-  REDIS_HOST: "redis-service"
+
+  SPRING_PROFILES_ACTIVE: docker
+
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/circleguard
+  SPRING_DATASOURCE_USERNAME: admin
+  SPRING_DATASOURCE_PASSWORD: password
+
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+  SPRING_NEO4J_URI: bolt://neo4j:7687
+  SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+  SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+
+  SPRING_DATA_REDIS_HOST: redis
 
 resources:
   limits:
     cpu: 500m
     memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi

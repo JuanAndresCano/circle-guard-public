@@ -6,29 +6,30 @@ spring:
     gateway:
       mvc:
         routes:
+
           - id: auth-service
-            uri: http://localhost:8180
+            uri: ${AUTH_SERVICE_URL:http://localhost:8180}
             predicates:
               - Path=/api/v1/auth/**
 
           - id: identity-service
-            uri: http://localhost:8083
+            uri: ${IDENTITY_SERVICE_URL:http://localhost:8083}
             predicates:
               - Path=/api/v1/identities/**
 
           - id: form-service
-            uri: http://localhost:8086
+            uri: ${FORM_SERVICE_URL:http://localhost:8086}
             predicates:
-              - Path=/api/v1/surveys/**,/api/v1/questionnaires/**,/api/v1/attachments/**
+              - Path=/api/v1/surveys/**
 
           - id: promotion-service
-            uri: http://localhost:8088
+            uri: ${PROMOTION_SERVICE_URL:http://localhost:8088}
             predicates:
-              - Path=/api/v1/mesh/**,/api/v1/circles/**,/api/v1/encounters/**,/api/v1/health/**,/api/v1/location/**,/api/v1/sessions/**,/api/v1/buildings/**,/api/v1/floors/**,/api/v1/access-points/**
+              - Path=/api/v1/mesh/**
 
   data:
     redis:
-      host: localhost
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: 6379
 
 server:

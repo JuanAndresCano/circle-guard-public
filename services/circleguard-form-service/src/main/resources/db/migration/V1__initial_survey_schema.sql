@@ -1,5 +1,5 @@
 -- Health Survey Schema
-
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE health_surveys (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     anonymous_id UUID NOT NULL,

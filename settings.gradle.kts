@@ -19,7 +19,6 @@ rootProject.name = "circleguard"
 // Microservices
 include("services:circleguard-auth-service")
 include("services:circleguard-identity-service")
-include("services:circleguard-promotion-service")
 include("services:circleguard-notification-service")
 include("services:circleguard-form-service")
 include("services:circleguard-file-service")

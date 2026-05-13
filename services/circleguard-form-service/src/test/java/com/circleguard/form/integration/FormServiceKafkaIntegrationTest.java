@@ -1,5 +1,6 @@
 package com.circleguard.form.integration;
 
+import com.circleguard.form.config.AbstractPostgresTest;
 import com.circleguard.form.model.HealthSurvey;
 import com.circleguard.form.repository.HealthSurveyRepository;
 import org.junit.jupiter.api.Test;
@@ -37,9 +38,9 @@ import static org.hamcrest.Matchers.notNullValue;
  * - Verifies the survey is saved to the H2 in-memory database
  * - Verifies that a Kafka message was sent to the correct topic
  */
-@SpringBootTest
+
 @AutoConfigureMockMvc
-public class FormServiceKafkaIntegrationTest {
+public class FormServiceKafkaIntegrationTest extends AbstractPostgresTest {
 
     @Autowired
     private MockMvc mockMvc;

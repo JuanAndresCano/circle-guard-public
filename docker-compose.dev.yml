@@ -1,6 +1,5 @@
-version: '3.8'
-
 services:
+
   postgres:
     image: postgres:16
     container_name: circleguard-postgres
@@ -27,9 +26,6 @@ services:
       - "7687:7687"
     environment:
       NEO4J_AUTH: neo4j/password
-      NEO4J_PLUGINS: '["apoc"]'
-      NEO4J_dbms_connector_bolt_listen__address: :7687
-      NEO4J_dbms_connector_bolt_advertised__address: :7687
     volumes:
       - neo4jdata:/data
 
@@ -38,7 +34,6 @@ services:
     container_name: circleguard-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-kafka:7.6.1
@@ -50,10 +45,15 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
     healthcheck:
       test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
       interval: 10s

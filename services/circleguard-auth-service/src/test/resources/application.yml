@@ -1,10 +1,22 @@
 spring:
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/circleguard
+    username: admin
+    password: password
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
-      ddl-auto: none
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  
   ldap:
     urls: ldap://localhost:389
     base: dc=circleguard,dc=edu
@@ -22,3 +34,10 @@ qr:
 identity:
   service:
     url: ${IDENTITY_SERVICE_URL:http://localhost:8083/api/v1/identities/map}
+
+    ##jpa:
+      ##hibernate:
+        ##ddl-auto: none
+    ##autoconfigure:
+      ##exclude:
+    ##    - org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration
