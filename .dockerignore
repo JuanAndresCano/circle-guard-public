@@ -1,0 +1,13 @@
+.gradle
+build
+**/build
+.git
+.idea
+.vscode
+*.log
+*.tmp
+out
+node_modules
+jenkins_home
+performance
+*.iml

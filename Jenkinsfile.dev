@@ -35,8 +35,8 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''./gradlew \
-                    :services:circleguard-gateway-service:build \
                     :services:circleguard-auth-service:build \
+                    :services:circleguard-gateway-service:build \
                     :services:circleguard-identity-service:build \
                     :services:circleguard-form-service:build \
                     :services:circleguard-notification-service:build \

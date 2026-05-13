@@ -18,3 +18,7 @@ jwt:
 qr:
   secret: "my-qr-secret-key-for-dev-1234567890"
   expiration: 300
+
+identity:
+  service:
+    url: ${IDENTITY_SERVICE_URL:http://localhost:8083/api/v1/identities/map}

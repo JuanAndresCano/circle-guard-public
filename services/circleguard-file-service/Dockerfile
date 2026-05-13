@@ -1,6 +1,30 @@
-FROM eclipse-temurin:21-jre-alpine
+# Stage 1: Build
+FROM gradle:8.14-jdk21 AS build
+
 WORKDIR /app
-ARG JAR_FILE=build/libs/*.jar
-COPY ${JAR_FILE} app.jar
+
+# Copiar solo archivos necesarios primero (cache Docker)
+COPY build.gradle.kts settings.gradle.kts gradlew ./
+COPY gradle gradle
+
+# Copiar únicamente el servicio necesario
+COPY services/circleguard-file-service services/circleguard-file-service
+
+# Dar permisos
+RUN chmod +x gradlew
+
+# Build
+RUN ./gradlew :services:circleguard-file-service:bootJar --no-daemon
+
+# Stage 2: Runtime
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+COPY --from=build \
+  /app/services/circleguard-file-service/build/libs/*.jar \
+  app.jar
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx256m", "-jar", "app.jar"]
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
