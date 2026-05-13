@@ -40,7 +40,6 @@ pipeline {
                     :services:circleguard-identity-service:build \
                     :services:circleguard-form-service:build \
                     :services:circleguard-notification-service:build \
-                    :services:circleguard-promotion-service:build \
                     -x test --no-daemon --parallel
                 '''
             }
@@ -54,8 +53,7 @@ pipeline {
                         'circleguard-auth-service',
                         'circleguard-identity-service',
                         'circleguard-form-service',
-                        'circleguard-notification-service',
-                        'circleguard-promotion-service'
+                        'circleguard-notification-service'
                     ]
 
                     services.each { service ->
@@ -91,7 +89,6 @@ pipeline {
                 sh '''./gradlew \
                     :services:circleguard-auth-service:test \
                     :services:circleguard-form-service:test \
-                    -x :services:circleguard-promotion-service:test \
                     -x :services:circleguard-identity-service:test \
                     -x :services:circleguard-gateway-service:test \
                     --no-daemon --continue --parallel
