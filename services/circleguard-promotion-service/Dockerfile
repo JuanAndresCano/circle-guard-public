@@ -2,8 +2,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY --from=build \
-  /app/services/circleguard-promotion-service/build/libs/*.jar \
+COPY services/circleguard-promotion-service/build/libs/*.jar \
   app.jar
 
 EXPOSE 8088
