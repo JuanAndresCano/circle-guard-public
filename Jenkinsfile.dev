@@ -41,6 +41,8 @@ pipeline {
                     :services:circleguard-form-service:build \
                     :services:circleguard-notification-service:build \
                     -x test --no-daemon --parallel
+
+                    sh 'find services/*/build/libs/ -name "*.jar" | sort'
                 '''
             }
         }
